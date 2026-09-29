@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Omega &amp; Alpha Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single working column — input panel, then summary strip, then item-level tables. */
+:root {
+  --bg: #f6f7f8; --surface: #ffffff; --ink: #1b232b; --muted: #5d6873; --line: #d9dee3;
+  --accent: #1f6f78; --accent-soft: #e2f0f1; --good: #2f7a3d; --warn: #9a6200; --bad: #b3362d; --warn-soft: #fbf1dd;
+  --f-display: "Newsreader", Georgia, "Times New Roman", serif;
+  --f-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12171c; --surface: #1a2128; --ink: #e4e9ee; --muted: #9aa6b1; --line: #2c3640;
+  --accent: #5fbac3; --accent-soft: #1d3438; --good: #6cc27d; --warn: #e2a73e; --bad: #ef7d73; --warn-soft: #362b17; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #12171c; --surface: #1a2128; --ink: #e4e9ee; --muted: #9aa6b1; --line: #2c3640;
+  --accent: #5fbac3; --accent-soft: #1d3438; --good: #6cc27d; --warn: #e2a73e; --bad: #ef7d73; --warn-soft: #362b17; color-scheme: dark }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 64px; display: flex; flex-direction: column; gap: 28px; }
+header h1 { font-family: var(--f-display); font-weight: 600; font-size: clamp(28px, 4vw, 38px); line-height: 1.1; margin: 0 0 8px; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); max-width: 68ch; }
+h2 { font-family: var(--f-display); font-weight: 600; font-size: 22px; margin: 0; }
+.eyebrow { font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+button, .filebtn { font: 500 14px var(--f-body); border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 8px 14px; border-radius: 7px; cursor: pointer; }
+button:hover, .filebtn:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+button:focus-visible, .filebtn:focus-within, textarea:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.filebtn input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+textarea { width: 100%; min-height: 120px; font: 12.5px/1.45 var(--f-mono); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 10px; resize: vertical; }
+label.opt { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+select, input[type=number] { font: 14px var(--f-body); padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); }
+.status { font-size: 13.5px; color: var(--muted); }
+.status.err { color: var(--bad); }
+.example-tag { font-size: 12px; font-weight: 600; background: var(--warn-soft); color: var(--warn); padding: 3px 8px; border-radius: 999px; }
+.items { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px 14px; }
+.item { display: flex; align-items: center; gap: 8px; font: 13px var(--f-mono); padding: 4px 0; min-width: 0; }
+.item .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.rev { font: 600 11px var(--f-body); border-radius: 5px; padding: 2px 7px; border: 1px solid var(--line); background: transparent; color: var(--muted); }
+.rev[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; align-self: flex-start; max-width: 100%; }
+.seg button { border: 0; border-radius: 0; border-right: 1px solid var(--line); padding: 8px 14px; background: var(--surface); color: var(--muted); }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-checked="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+select:disabled { opacity: .6; }
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.stat { background: var(--surface); padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; }
+.stat .v { font: 500 30px/1.1 var(--f-display); font-variant-numeric: tabular-nums; }
+.stat.key .v { color: var(--accent); }
+.stat .sub { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+th, td { padding: 7px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+td { font-family: var(--f-mono); font-size: 12.5px; }
+td.strong { font-weight: 600; color: var(--ink); }
+td.faint { color: var(--muted); }
+td.flag { color: var(--bad); font-weight: 600; }
+.note { font-size: 13.5px; color: var(--muted); max-width: 72ch; }
+.warnings { display: flex; flex-direction: column; gap: 6px; }
+.warnings div { background: var(--warn-soft); color: var(--warn); padding: 8px 12px; border-radius: 7px; font-size: 13.5px; }
+details summary { cursor: pointer; font-weight: 600; }
+details .body { padding-top: 10px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; max-width: 72ch; }
+code { font-family: var(--f-mono); font-size: 12.5px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Omega &amp; Alpha Calculator</h1>
+    <p>Enter item-level survey data, or a covariance or correlation matrix, to get coefficient alpha and omega-hierarchical from a Schmid–Leiman bifactor solution. Everything runs in your browser; your data never leave this page.</p>
+    <p style="margin-top:10px">Omega-h requires that the number of group factors be specified. You can specify a number of group factors or the tool will do it automatically using parallel analysis.</p>
+  </header>
+
+  <section class="panel" aria-labelledby="h-data">
+    <div class="row" style="justify-content:space-between">
+      <h2 id="h-data">Data</h2>
+      <span id="exampleTag" class="example-tag">Example data loaded</span>
+    </div>
+    <div class="seg" role="radiogroup" aria-label="Input type">
+      <button type="button" role="radio" data-mode="raw" aria-checked="true">Raw data</button>
+      <button type="button" role="radio" data-mode="covariance" aria-checked="false">Covariance matrix</button>
+      <button type="button" role="radio" data-mode="correlation" aria-checked="false">Correlation matrix</button>
+    </div>
+    <p class="note" style="margin:0" data-for="raw">One row per respondent, one column per item, header row with item names. Excel (.xlsx, .xls, .ods), CSV, TSV or semicolon-separated. Blank, <code>NA</code>, <code>.</code>, <code>-99</code> and <code>-999</code> count as missing; incomplete rows are dropped (listwise).</p>
+    <p class="note" style="margin:0" data-for="matrix" hidden>A square matrix, full or lower triangle including the diagonal, from an Excel sheet or separated by commas, tabs, semicolons or spaces. Item names can go in a header row or as row labels. Sample size is optional and only needed for the alpha confidence interval.</p>
+    <div class="row">
+      <label class="filebtn">Upload file<input id="file" type="file" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls,.ods,text/csv,text/plain"></label>
+      <label class="opt" for="sheetSel" id="sheetWrap" hidden>Sheet <select id="sheetSel"></select></label>
+      <button id="loadExample" type="button">Load example</button>
+      <button id="clear" type="button">Clear</button>
+      <label class="opt" for="nInput" data-for="matrix" hidden>Sample size (n) <input id="nInput" type="number" min="2" step="1" placeholder="optional" style="width:110px"></label>
+    </div>
+    <textarea id="paste" spellcheck="false" aria-label="Paste data here"></textarea>
+    <div class="row"><button id="readData" type="button">Read pasted data</button><span id="dataStatus" class="status"></span></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-items" id="itemsPanel" hidden>
+    <div class="row" style="justify-content:space-between">
+      <h2 id="h-items">Items</h2>
+      <div class="row"><button id="selAll" type="button">Select all</button><button id="selNone" type="button">Select none</button></div>
+    </div>
+    <p class="note" style="margin:0" id="revNote">Tick the items that make up the scale. Press <b>R</b> to reverse-score an item (score becomes min + max − score, using the observed range).</p>
+    <div id="items" class="items"></div>
+    <div class="row">
+      <label class="opt" for="basis">Calculate from <select id="basis"><option value="covariance" selected>Covariances (raw scores)</option><option value="correlation">Correlations (standardized items)</option></select></label>
+      <label class="opt" for="nf">Group factors <select id="nf"></select></label>
+      <label class="opt" for="level">Alpha CI <select id="level"><option value="0.90">90%</option><option value="0.95" selected>95%</option><option value="0.99">99%</option></select></label>
+      <button id="run" class="primary" type="button">Compute</button>
+      <span id="runStatus" class="status"></span>
+    </div>
+    <div class="row" style="align-items:flex-start;gap:10px">
+      <p id="nfNote" class="note" style="margin:0;flex:1;min-width:0"></p>
+      <button id="useSuggestion" type="button" hidden>Use suggestion</button>
+    </div>
+  </section>
+
+  <section id="results" hidden style="display:flex;flex-direction:column;gap:22px">
+    <div class="row" style="justify-content:space-between">
+      <h2>Results</h2>
+      <button id="copy" type="button">Copy results as table</button>
+    </div>
+    <div class="summary" id="summary"></div>
+    <div class="warnings" id="warnings"></div>
+
+    <div class="panel">
+      <span class="eyebrow">Item statistics and Schmid–Leiman loadings</span>
+      <div class="tablewrap"><table id="itemTable"></table></div>
+      <p class="note" style="margin:0"><b>r.drop</b> is the corrected item–total correlation. <b>g</b> is the loading on the general factor, <b>F1…Fk</b> are residualized group-factor loadings, <b>h²</b> communality, <b>u²</b> uniqueness. Loadings of |.20| or more are bold. Red marks a negative r.drop or g loading, which usually means an item needs reverse scoring.</p>
+    </div>
+
+    <div class="panel">
+      <span class="eyebrow">Group factors</span>
+      <div class="tablewrap"><table id="groupTable"></table></div>
+      <p class="note" style="margin:0">Items are assigned to the group factor with their largest loading. <b>ω</b> is subscale omega (general + group variance), <b>ω<sub>hs</sub></b> is omega-hierarchical-subscale (group-factor variance only, with the general factor partialled out).</p>
+    </div>
+
+    <details class="panel">
+      <summary>Number of factors, oblique solution and eigenvalues</summary>
+      <div class="body" style="max-width:none">
+        <div class="tablewrap"><table id="paTable"></table></div>
+        <div class="tablewrap"><table id="mapTable"></table></div>
+        <p id="countNote" class="note" style="margin:0"></p>
+        <div class="tablewrap"><table id="obliqueTable"></table></div>
+        <div class="tablewrap"><table id="phiTable"></table></div>
+        <div id="eigen" class="note"></div>
+      </div>
+    </details>
+
+    <details class="panel">
+      <summary>Method</summary>
+      <div class="body">
+        <p><b>Input.</b> Raw data are reduced to a covariance matrix (listwise deletion). You can instead enter a covariance or correlation matrix directly, which gives identical results to the raw data it came from. Reverse scoring a matrix item flips the sign of its row and column, which is what reverse scoring does to the covariances. Item means are only available from raw data.</p>
+        <p><b>Basis.</b> <i>Covariances</i> gives the reliability of the unit-weighted sum of raw item scores: raw alpha and omega with loadings rescaled by each item's SD. <i>Correlations</i> gives the reliability of the sum of standardized items: standardized alpha and the standardized omega reported by <code>psych::omega</code>. A correlation matrix carries no SDs, so it always uses the correlation basis. The two bases differ only when item variances differ.</p>
+        <p><b>Number of group factors.</b> The tool preselects it with parallel analysis (Horn, 1965) in its common-factor form, as in <code>psych::fa.parallel</code>. It compares the eigenvalues of the correlation matrix, with squared multiple correlations on the diagonal, against the 95th percentile of eigenvalues from 100 random normal data sets of the same size, and keeps the leading factors that beat chance. The suggestion is never below 2, the minimum for ω<sub>h</sub>, or above one factor per three items. You can override it. Velicer's MAP test (original 1976 and revised 2000) is reported for reference but not used to preselect, because with a strong general factor it usually suggests one factor. In simulated bifactor data with 3 to 5 group factors, the common-factor parallel analysis found the right number every time, while MAP usually returned 1. Parallel analysis needs n, so for a matrix without n the tool uses psych's default of 3.</p>
+        <p><b>Alpha</b> is k/(k − 1) · (1 − Σ σ²ᵢ / σ²ₓ) on the chosen matrix. The confidence interval follows Feldt (1965), using the F distribution with n − 1 and (n − 1)(k − 1) degrees of freedom; it needs n.</p>
+        <p><b>Omega</b> follows the defaults of <code>psych::omega</code> in R: minimum-residual (iterated principal axis) extraction of k factors from the correlation matrix, oblimin rotation, a single higher-order factor extracted from the factor correlations, then the Schmid–Leiman transformation. With two group factors the higher-order loadings are set equal to √r₁₂, as in psych.</p>
+        <p>ω<sub>h</sub> = (Σ wᵢgᵢ)² / w′Rw &nbsp;·&nbsp; ω<sub>t</sub> = 1 − Σ wᵢ²u²ᵢ / w′Rw &nbsp;·&nbsp; ECV = Σ g² / Σ h², where wᵢ is item i's SD on the covariance basis and 1 on the correlation basis. Loadings in the tables are always shown standardized.</p>
+        <p>For ordinal items with few categories, polychoric correlations can give somewhat higher values; you can paste a polychoric matrix computed elsewhere as a correlation matrix. Schmid–Leiman results depend on the number of group factors, so check the eigenvalues and the factor pattern before reporting.</p>
+      </div>
+    </details>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// Reliability engine: coefficient alpha + omega (Schmid–Leiman), browser & node.
+(function (root) {
+  'use strict';
+
+  // ---------- small linear algebra ----------
+  const zeros = (r, c) => Array.from({ length: r }, () => new Array(c).fill(0));
+  const eye = n => { const m = zeros(n, n); for (let i = 0; i < n; i++) m[i][i] = 1; return m; };
+  const T = A => A[0].map((_, j) => A.map(r => r[j]));
+  const mul = (A, B) => {
+    const n = A.length, m = B[0].length, p = B.length, C = zeros(n, m);
+    for (let i = 0; i < n; i++) for (let k = 0; k < p; k++) {
+      const a = A[i][k]; if (a === 0) continue;
+      for (let j = 0; j < m; j++) C[i][j] += a * B[k][j];
+    }
+    return C;
+  };
+  function inv(A) {
+    const n = A.length, M = A.map((r, i) => [...r, ...eye(n)[i]]);
+    for (let c = 0; c < n; c++) {
+      let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+      if (Math.abs(M[p][c]) < 1e-12) throw new Error('Matrix is singular (items may be perfectly collinear or have zero variance).');
+      [M[c], M[p]] = [M[p], M[c]];
+      const d = M[c][c]; for (let j = 0; j < 2 * n; j++) M[c][j] /= d;
+      for (let r = 0; r < n; r++) if (r !== c) {
+        const f = M[r][c]; if (f === 0) continue;
+        for (let j = 0; j < 2 * n; j++) M[r][j] -= f * M[c][j];
+      }
+    }
+    return M.map(r => r.slice(n));
+  }
+  // Jacobi eigen-decomposition of a symmetric matrix; returns values desc + vectors (columns)
+  function eigSym(S) {
+    const n = S.length, A = S.map(r => r.slice()), V = eye(n);
+    for (let sweep = 0; sweep < 100; sweep++) {
+      let off = 0; for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) off += A[i][j] * A[i][j];
+      if (off < 1e-22) break;
+      for (let p = 0; p < n; p++) for (let q = p + 1; q < n; q++) {
+        if (Math.abs(A[p][q]) < 1e-300) continue;
+        const th = (A[q][q] - A[p][p]) / (2 * A[p][q]);
+        const t = Math.sign(th || 1) / (Math.abs(th) + Math.sqrt(th * th + 1));
+        const c = 1 / Math.sqrt(t * t + 1), s = t * c;
+        for (let k = 0; k < n; k++) {
+          const akp = A[k][p], akq = A[k][q];
+          A[k][p] = c * akp - s * akq; A[k][q] = s * akp + c * akq;
+        }
+        for (let k = 0; k < n; k++) {
+          const apk = A[p][k], aqk = A[q][k];
+          A[p][k] = c * apk - s * aqk; A[q][k] = s * apk + c * aqk;
+        }
+        for (let k = 0; k < n; k++) {
+          const vkp = V[k][p], vkq = V[k][q];
+          V[k][p] = c * vkp - s * vkq; V[k][q] = s * vkp + c * vkq;
+        }
+      }
+    }
+    const idx = [...Array(n).keys()].sort((a, b) => A[b][b] - A[a][a]);
+    return { values: idx.map(i => A[i][i]), vectors: V.map(r => idx.map(i => r[i])) };
+  }
+
+  // ---------- descriptive ----------
+  function covCor(X) {
+    const n = X.length, k = X[0].length, mean = new Array(k).fill(0);
+    for (const r of X) for (let j = 0; j < k; j++) mean[j] += r[j] / n;
+    const C = zeros(k, k);
+    for (const r of X) for (let i = 0; i < k; i++) {
+      const di = r[i] - mean[i];
+      for (let j = i; j < k; j++) C[i][j] += di * (r[j] - mean[j]);
+    }
+    for (let i = 0; i < k; i++) for (let j = i; j < k; j++) { C[i][j] /= (n - 1); C[j][i] = C[i][j]; }
+    const sd = C.map((r, i) => Math.sqrt(r[i]));
+    const R = C.map((r, i) => r.map((v, j) => v / (sd[i] * sd[j])));
+    return { mean, sd, C, R };
+  }
+  const sumAll = M => M.reduce((s, r) => s + r.reduce((a, b) => a + b, 0), 0);
+
+  // ---------- F distribution (for Feldt CI) ----------
+  function lgamma(x) {
+    const g = [676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059,
+      12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+    if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - lgamma(1 - x);
+    x -= 1; let a = 0.99999999999980993; const t = x + 7.5;
+    for (let i = 0; i < 8; i++) a += g[i] / (x + i + 1);
+    return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+  }
+  function betacf(a, b, x) {
+    let qab = a + b, qap = a + 1, qam = a - 1, c = 1, d = 1 - qab * x / qap;
+    if (Math.abs(d) < 1e-300) d = 1e-300; d = 1 / d; let h = d;
+    for (let m = 1; m <= 300; m++) {
+      const m2 = 2 * m; let aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+      d = 1 + aa * d; if (Math.abs(d) < 1e-300) d = 1e-300; c = 1 + aa / c; if (Math.abs(c) < 1e-300) c = 1e-300;
+      d = 1 / d; h *= d * c;
+      aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+      d = 1 + aa * d; if (Math.abs(d) < 1e-300) d = 1e-300; c = 1 + aa / c; if (Math.abs(c) < 1e-300) c = 1e-300;
+      d = 1 / d; const del = d * c; h *= del; if (Math.abs(del - 1) < 3e-14) break;
+    }
+    return h;
+  }
+  function ibeta(x, a, b) {
+    if (x <= 0) return 0; if (x >= 1) return 1;
+    const bt = Math.exp(lgamma(a + b) - lgamma(a) - lgamma(b) + a * Math.log(x) + b * Math.log(1 - x));
+    return x < (a + 1) / (a + b + 2) ? bt * betacf(a, b, x) / a : 1 - bt * betacf(b, a, 1 - x) / b;
+  }
+  const fCdf = (f, d1, d2) => ibeta(d1 * f / (d1 * f + d2), d1 / 2, d2 / 2);
+  function fQuantile(p, d1, d2) {
+    let lo = 0, hi = 1; while (fCdf(hi, d1, d2) < p) hi *= 2;
+    for (let i = 0; i < 200; i++) { const m = (lo + hi) / 2; (fCdf(m, d1, d2) < p ? lo = m : hi = m); }
+    return (lo + hi) / 2;
+  }
+
+  // ---------- alpha ----------
+  function alphaFromCov(C) {
+    const k = C.length, tr = C.reduce((s, r, i) => s + r[i], 0), tot = sumAll(C);
+    return (k / (k - 1)) * (1 - tr / tot);
+  }
+  // Alpha from a covariance (or correlation) matrix. M is the matrix alpha is based on;
+  // R is the correlation matrix. n is optional (needed only for the Feldt CI).
+  function alphaFromMatrix(M, R, names, n, level = 0.95, mean = null, sd = null) {
+    const k = M.length;
+    const alpha = alphaFromCov(M), stdAlpha = alphaFromCov(R);
+    let ci = null;
+    if (n && n > 1) {
+      const g = 1 - level, d1 = n - 1, d2 = (n - 1) * (k - 1);
+      ci = [1 - (1 - alpha) * fQuantile(1 - g / 2, d1, d2), 1 - (1 - alpha) * fQuantile(g / 2, d1, d2)];
+    }
+    const offR = []; for (let i = 0; i < k; i++) for (let j = i + 1; j < k; j++) offR.push(R[i][j]);
+    const meanR = offR.reduce((a, b) => a + b, 0) / offR.length;
+    const items = names.map((nm, i) => {
+      const keep = [...Array(k).keys()].filter(j => j !== i);
+      const Mi = keep.map(a => keep.map(b => M[a][b]));
+      let covIT = 0; for (const j of keep) covIT += M[i][j];
+      return {
+        name: nm, mean: mean ? mean[i] : NaN, sd: sd ? sd[i] : NaN,
+        rDrop: covIT / Math.sqrt(M[i][i] * sumAll(Mi)),
+        alphaIfDeleted: k > 2 ? alphaFromCov(Mi) : NaN
+      };
+    });
+    return { n: n || null, k, alpha, stdAlpha, ci, level, meanR, items };
+  }
+  function alphaAnalysis(X, names, level = 0.95, basis = 'covariance') {
+    const { C, R, mean, sd } = covCor(X);
+    return alphaFromMatrix(basis === 'correlation' ? R : C, R, names, X.length, level, mean, sd);
+  }
+
+  // ---------- factor extraction: iterated principal axis (converges to ULS/minres) ----------
+  function paf(R, nf, maxIter = 2000, tol = 1e-7) {
+    const p = R.length; let h2, warn = [];
+    try { const Ri = inv(R); h2 = Ri.map((r, i) => Math.min(1 - 1 / r[i], 0.995)); }
+    catch (e) { h2 = R.map(r => Math.max(...r.map((v, j) => Math.abs(v)).filter((_, j) => true)) ** 2); }
+    let L, it = 0, converged = false;
+    for (; it < maxIter; it++) {
+      const Rr = R.map((r, i) => r.map((v, j) => (i === j ? h2[i] : v)));
+      const { values, vectors } = eigSym(Rr);
+      L = vectors.map(r => r.slice(0, nf).map((v, j) => v * Math.sqrt(Math.max(values[j], 0))));
+      const h2n = L.map(r => r.reduce((s, v) => s + v * v, 0));
+      const d = Math.max(...h2n.map((v, i) => Math.abs(v - h2[i])));
+      h2 = h2n; if (d < tol) { converged = true; break; }
+    }
+    if (!converged) warn.push('Factor extraction did not fully converge.');
+    if (h2.some(v => v > 1)) warn.push('Heywood case: an item has communality > 1 — consider fewer factors.');
+    return { L, h2, converged, iterations: it, warnings: warn };
+  }
+
+  // ---------- oblimin (quartimin, gamma = 0) via gradient projection (Bernaards & Jennrich) ----------
+  function vgQ(L) {
+    const p = L.length, m = L[0].length, L2 = L.map(r => r.map(v => v * v));
+    let f = 0; const G = zeros(p, m);
+    for (let i = 0; i < p; i++) {
+      const s = L2[i].reduce((a, b) => a + b, 0);
+      for (let j = 0; j < m; j++) { const o = s - L2[i][j]; f += L2[i][j] * o; G[i][j] = L[i][j] * o; }
+    }
+    return { f: f / 4, G };
+  }
+  // Gradient-projection oblique rotation from one starting matrix T0.
+  function gpfOblq(A, T0, maxIter = 1000, eps = 1e-6) {
+    const m = A[0].length;
+    let Tm = T0, al = 1;
+    let Ti = inv(Tm), L = mul(A, T(Ti)), { f, G: Gq } = vgQ(L);
+    let G = T(mul(mul(T(L), Gq), Ti)).map(r => r.map(v => -v));
+    let converged = false;
+    for (let it = 0; it < maxIter; it++) {
+      const cs = Tm[0].map((_, j) => Tm.reduce((s, r, i) => s + r[j] * G[i][j], 0));
+      const Gp = G.map((r, i) => r.map((v, j) => v - Tm[i][j] * cs[j]));
+      const s = Math.sqrt(sumAll(Gp.map(r => r.map(v => v * v))));
+      if (s < eps) { converged = true; break; }
+      al *= 2; let Tt, Lt, ft, Gqt;
+      for (let i = 0; i <= 10; i++) {
+        const X = Tm.map((r, a) => r.map((v, b) => v - al * Gp[a][b]));
+        const v = X[0].map((_, j) => 1 / Math.sqrt(X.reduce((q, r) => q + r[j] * r[j], 0)));
+        Tt = X.map(r => r.map((x, j) => x * v[j]));
+        Lt = mul(A, T(inv(Tt))); ({ f: ft, G: Gqt } = vgQ(Lt));
+        if (ft < f - 0.5 * s * s * al) break;
+        al /= 2;
+      }
+      Tm = Tt; f = ft; L = Lt;
+      G = T(mul(mul(T(L), Gqt), inv(Tt))).map(r => r.map(v => -v));
+    }
+    return { Tm, L, f, converged };
+  }
+  // Oblimin (quartimin) with multiple starts: the identity start can sit on a stationary
+  // point that is not a minimum (e.g. perfectly symmetric factor structures), so we also
+  // try seeded random starts and keep the solution with the lowest criterion.
+  function oblimin(A, nStarts = 30) {
+    const m = A[0].length; if (m === 1) return { L: A, Phi: [[1]], converged: true };
+    let seed = 12345;
+    const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+    const rnorm = () => { let u = 0; while (!u) u = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rnd()); };
+    const starts = [eye(m)];
+    for (let s = 0; s < nStarts; s++) {
+      const X = [...Array(m)].map(() => [...Array(m)].map(rnorm));
+      const v = X[0].map((_, j) => 1 / Math.sqrt(X.reduce((q, r) => q + r[j] * r[j], 0)));
+      starts.push(X.map(r => r.map((x, j) => x * v[j])));
+    }
+    let best = null;
+    for (const T0 of starts) {
+      let res; try { res = gpfOblq(A, T0); } catch (e) { continue; }
+      if (!isFinite(res.f)) continue;
+      if (!best || res.f < best.f - 1e-9 || (Math.abs(res.f - best.f) <= 1e-9 && res.converged && !best.converged)) best = res;
+    }
+    let { Tm, L, converged } = best;
+    let Phi = mul(T(Tm), Tm);
+    // reflect factors so loadings sum positive
+    const sgn = L[0].map((_, j) => (L.reduce((s, r) => s + r[j], 0) < 0 ? -1 : 1));
+    L = L.map(r => r.map((v, j) => v * sgn[j]));
+    Phi = Phi.map((r, i) => r.map((v, j) => v * sgn[i] * sgn[j]));
+    // order factors by sum of squared loadings
+    const ss = L[0].map((_, j) => L.reduce((s, r) => s + r[j] * r[j], 0));
+    const ord = [...ss.keys()].sort((a, b) => ss[b] - ss[a]);
+    L = L.map(r => ord.map(j => r[j])); Phi = ord.map(i => ord.map(j => Phi[i][j]));
+    return { L, Phi, converged };
+  }
+
+  // ---------- omega via Schmid–Leiman ----------
+  // sd (optional): item SDs. When given, omegas refer to the unit-weighted sum of RAW items
+  // (covariance basis): loadings and uniquenesses are rescaled by each item's SD and the
+  // denominator is 1'C1 with C = D R D. Without sd, omegas refer to the sum of standardized items.
+  function omegaFromR(R, names, nf, sd = null) {
+    const p = R.length, warnings = [];
+    if (nf < 1) throw new Error('Need at least 1 group factor.');
+    if (nf > Math.floor(p / 2)) warnings.push('Few items per factor; the solution may be unstable.');
+    const fa = paf(R, nf); warnings.push(...fa.warnings);
+    const rot = oblimin(fa.L); if (!rot.converged) warnings.push('Oblimin rotation did not fully converge.');
+    const L = rot.L, Phi = rot.Phi;
+    if (nf > 1) {
+      let maxPhi = 0; for (let i = 0; i < nf; i++) for (let j = 0; j < i; j++) maxPhi = Math.max(maxPhi, Math.abs(Phi[i][j]));
+      if (maxPhi < 0.05) warnings.push('The group factors are nearly uncorrelated, so there is almost no general factor and ω_h is close to 0. Check the number of group factors.');
+    }
+    // second-order general-factor loadings of each first-order factor
+    let gl;
+    if (nf === 1) gl = [1];
+    else if (nf === 2) {
+      const r = Math.max(Phi[0][1], 0);
+      gl = [Math.sqrt(r), Math.sqrt(r)];
+      warnings.push('With only 2 group factors the general factor is not identified; loadings on g are set equal (√r₁₂), as psych::omega does.');
+    } else {
+      const f2 = paf(Phi, 1); gl = f2.L.map(r => r[0]);
+      if (gl.reduce((a, b) => a + b, 0) < 0) gl = gl.map(v => -v);
+      if (gl.some(v => v > 1)) warnings.push('A group factor loads > 1 on g (Heywood case in the higher-order solution).');
+    }
+    const g = L.map(r => r.reduce((s, v, j) => s + v * gl[j], 0));
+    const S = L.map(r => r.map((v, j) => v * Math.sqrt(Math.max(1 - gl[j] * gl[j], 0))));
+    const h2 = g.map((gi, i) => gi * gi + S[i].reduce((s, v) => s + v * v, 0));
+    const u2 = h2.map(v => 1 - v);
+    const w = sd ? sd : new Array(p).fill(1);
+    const Vt = R.reduce((s, r, i) => s + r.reduce((t, v, j) => t + v * w[i] * w[j], 0), 0);
+    const sumG = g.reduce((a, b, i) => a + b * w[i], 0);
+    const omegaH = nf === 1 ? NaN : (sumG * sumG) / Vt;
+    const omegaT = 1 - u2.reduce((a, b, i) => a + b * w[i] * w[i], 0) / Vt;
+    const ECV = g.reduce((s, v) => s + v * v, 0) / h2.reduce((a, b) => a + b, 0);
+    // subscales: assign each item to group factor with largest |loading|
+    const assign = S.map(r => r.reduce((b, v, j) => (Math.abs(v) > Math.abs(r[b]) ? j : b), 0));
+    const groups = [...Array(nf).keys()].map(j => {
+      const idx = assign.map((a, i) => (a === j ? i : -1)).filter(i => i >= 0);
+      if (idx.length === 0) return { factor: j + 1, items: [], omega: NaN, omegaHS: NaN };
+      const Vs = idx.reduce((s, a) => s + idx.reduce((t, b) => t + R[a][b] * w[a] * w[b], 0), 0);
+      const sg = idx.reduce((s, i) => s + g[i] * w[i], 0);
+      const sOwn = idx.reduce((s, i) => s + S[i][j] * w[i], 0);
+      const uS = idx.reduce((s, i) => s + u2[i] * w[i] * w[i], 0);
+      return { factor: j + 1, items: idx.map(i => names[i]), omega: 1 - uS / Vs, omegaHS: (sOwn * sOwn) / Vs, omegaHofSubscale: (sg * sg) / Vs };
+    });
+    return {
+      nf, omegaH, omegaT, ECV, omegaHOverT: omegaH / omegaT,
+      firstOrder: { loadings: L, Phi, gLoadings: gl },
+      items: names.map((nm, i) => ({ name: nm, g: g[i], s: S[i], h2: h2[i], u2: u2[i] })),
+      groups, eigenvalues: eigSym(R).values, warnings
+    };
+  }
+
+  // ---------- number of factors ----------
+  // Velicer's MAP: average squared (original, 1976) and fourth-power (revised, 2000)
+  // partial correlations after removing the first m principal components, m = 0..p-2.
+  function mapTest(R) {
+    const p = R.length, { values, vectors } = eigSym(R);
+    const orig = [], rev = [];
+    for (let m = 0; m <= p - 2; m++) {
+      const C = R.map((r, i) => r.map((v, j) => {
+        let s = v; for (let k = 0; k < m; k++) s -= vectors[i][k] * vectors[j][k] * Math.max(values[k], 0);
+        return s;
+      }));
+      if (C.some((r, i) => !(r[i] > 1e-10))) break;
+      let s2 = 0, s4 = 0;
+      for (let i = 0; i < p; i++) for (let j = 0; j < p; j++) if (i !== j) {
+        const q = C[i][j] / Math.sqrt(C[i][i] * C[j][j]), q2 = q * q; s2 += q2; s4 += q2 * q2;
+      }
+      orig.push(s2 / (p * (p - 1))); rev.push(s4 / (p * (p - 1)));
+    }
+    const argmin = a => a.reduce((b, v, i) => (v < a[b] ? i : b), 0);
+    return { orig, rev, mOrig: argmin(orig), mRev: argmin(rev) };
+  }
+  // Parallel analysis (Horn, 1965), both versions from the same random draws:
+  //   pc — eigenvalues of R (principal components)
+  //   fa — eigenvalues of R with squared multiple correlations on the diagonal (common factors),
+  //        as in psych::fa.parallel. The fa version handles a strong general factor much better.
+  // A dimension is retained while its observed eigenvalue exceeds the chosen quantile of the random ones.
+  function parallelAnalysis(R, n, { reps = 100, quantile = 0.95, seed = 20260929 } = {}) {
+    const p = R.length;
+    const smcEig = M => { let Mi; try { Mi = inv(M); } catch (e) { return null; } return eigSym(M.map((r, i) => r.map((v, j) => (i === j ? 1 - 1 / Mi[i][i] : v)))).values; };
+    const obsPC = eigSym(R).values, obsFA = smcEig(R);
+    if (n * p * p * reps > 4e8) reps = Math.max(20, Math.floor(4e8 / (n * p * p)));
+    let s = seed;
+    const rnd = () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+    const z = () => { let u = 0; while (!u) u = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rnd()); };
+    const simPC = [...Array(p)].map(() => []), simFA = [...Array(p)].map(() => []);
+    for (let r = 0; r < reps; r++) {
+      const X = [...Array(n)].map(() => [...Array(p)].map(z)), Rr = covCor(X).R;
+      eigSym(Rr).values.forEach((v, i) => simPC[i].push(v));
+      const f = smcEig(Rr); if (f) f.forEach((v, i) => simFA[i].push(v));
+    }
+    const q = a => { a.sort((x, y) => x - y); const h = (a.length - 1) * quantile, lo = Math.floor(h); return a[lo] + (a[Math.min(lo + 1, a.length - 1)] - a[lo]) * (h - lo); };
+    const count = (obs, qv) => { let m = 0; while (m < p && obs[m] > qv[m]) m++; return m; };
+    const pc = { observed: obsPC, random: simPC.map(q) }; pc.m = count(pc.observed, pc.random);
+    let fa = null;
+    if (obsFA && simFA[0].length) { fa = { observed: obsFA, random: simFA.map(q) }; fa.m = count(fa.observed, fa.random); }
+    return { pc, fa, m: fa ? fa.m : pc.m, reps, quantile, n };
+  }
+  // Suggest a number of group factors. Preselection uses factor-analytic parallel analysis
+  // (needs n). MAP is reported but not used to preselect: with a strong general factor it
+  // typically suggests 1. Without n, fall back to psych's default of 3.
+  // Result is never below 2 (omega-h needs >= 2 group factors) or above floor(p/3).
+  function suggestFactors(R, n) {
+    const p = R.length, map = mapTest(R);
+    const pa = n && n > p ? parallelAnalysis(R, n) : null;
+    const cap = Math.max(1, Math.min(8, Math.floor(p / 3)));
+    const raw = pa ? pa.m : 3;
+    const method = pa ? (pa.fa ? 'parallel analysis' : 'parallel analysis (components)') : 'default';
+    return { nf: Math.min(Math.max(raw, 2), cap), raw, method, map, pa, cap, floored: pa && raw < 2, capped: raw > cap };
+  }
+
+  // ---------- data handling ----------
+  function parseData(text) {
+    const lines = text.replace(/\r/g, '').split('\n').filter(l => l.trim() !== '');
+    if (lines.length < 2) throw new Error('Need a header row plus data rows.');
+    const first = lines[0];
+    const delim = first.includes('\t') ? '\t' : (first.split(';').length > first.split(',').length ? ';' : ',');
+    const split = l => l.split(delim).map(s => s.trim().replace(/^"(.*)"$/, '$1'));
+    let header = split(lines[0]);
+    const headerIsNumeric = header.every(h => h !== '' && !isNaN(+h));
+    const body = headerIsNumeric ? lines : lines.slice(1);
+    if (headerIsNumeric) header = header.map((_, i) => 'Item' + (i + 1));
+    const rows = body.map(split);
+    return { header, rows };
+  }
+  // Prepare numeric matrix from selected columns, listwise deletion, optional reverse keying
+  function prepare(parsed, cols, reverse = {}, missing = ['', 'NA', 'na', '.', '-99', '-999']) {
+    const X = [], dropped = [];
+    const idx = cols.map(c => parsed.header.indexOf(c));
+    parsed.rows.forEach((r, ri) => {
+      const v = idx.map(i => (missing.includes(r[i] ?? '') ? NaN : Number(r[i])));
+      if (v.some(x => !isFinite(x))) dropped.push(ri); else X.push(v);
+    });
+    if (X.length < 3) throw new Error('Fewer than 3 complete rows after removing missing values.');
+    const minmax = idx.map((_, j) => [Math.min(...X.map(r => r[j])), Math.max(...X.map(r => r[j]))]);
+    cols.forEach((c, j) => {
+      if (!reverse[c]) return;
+      const [lo, hi] = reverse[c] === true ? minmax[j] : reverse[c];
+      X.forEach(r => (r[j] = lo + hi - r[j]));
+    });
+    const sds = cols.map((c, j) => { const m = X.reduce((s, r) => s + r[j], 0) / X.length; return Math.sqrt(X.reduce((s, r) => s + (r[j] - m) ** 2, 0)); });
+    const zeroVar = cols.filter((c, j) => sds[j] === 0);
+    if (zeroVar.length) throw new Error('No variance in: ' + zeroVar.join(', '));
+    return { X, dropped: dropped.length, minmax };
+  }
+  // basis: 'covariance' (raw-score reliability, alpha from C) or 'correlation' (standardized items)
+  function fromMatrices(C, R, names, { nf = 3, n = null, level = 0.95, basis = 'covariance', mean = null, sd = null } = {}) {
+    if (names.length < 3) throw new Error('Select at least 3 items.');
+    const useCov = basis === 'covariance' && C;
+    const a = alphaFromMatrix(useCov ? C : R, R, names, n, level, mean, sd);
+    const o = omegaFromR(R, names, nf, useCov ? sd : null);
+    const ev = eigSym(R).values;
+    if (ev[ev.length - 1] <= 1e-10) o.warnings.push('The correlation matrix is not positive definite (smallest eigenvalue ≤ 0). This often happens with pairwise-deleted matrices or typos; results may be unreliable.');
+    return { alpha: a, omega: o, R, basis: useCov ? 'covariance' : 'correlation' };
+  }
+  function analyze(X, names, nf = 3, level = 0.95, basis = 'covariance') {
+    const { C, R, mean, sd } = covCor(X);
+    return fromMatrices(C, R, names, { nf, n: X.length, level, basis, mean, sd });
+  }
+
+  // Parse a square covariance/correlation matrix: full or lower/upper triangle,
+  // optional header row and/or row labels; comma, tab, semicolon or whitespace separated.
+  function parseMatrix(text) {
+    const lines = text.replace(/\r/g, '').split('\n').map(l => l.trim()).filter(Boolean);
+    if (!lines.length) throw new Error('Paste a matrix first.');
+    const tok = l => l.split(/[,\t;]/.test(l) ? /\s*[,\t;]\s*/ : /\s+/).map(s => s.trim().replace(/^"(.*)"$/, '$1')).filter(s => s !== '');
+    const isNum = s => s !== '' && isFinite(Number(s));
+    let rows = lines.map(tok), header = null;
+    if (!rows[0].every(isNum)) { header = rows[0].filter(s => !isNum(s)); rows = rows.slice(1); }
+    const labels = [];
+    rows = rows.map(r => { if (!isNum(r[0])) { labels.push(r[0]); return r.slice(1); } labels.push(null); return r; });
+    if (rows.some(r => !r.every(isNum))) throw new Error('The matrix contains non-numeric entries (other than a header row and row labels).');
+    rows = rows.map(r => r.map(Number));
+    const k = rows.length, lens = rows.map(r => r.length);
+    const M = zeros(k, k);
+    if (lens.every(l => l === k)) rows.forEach((r, i) => r.forEach((v, j) => (M[i][j] = v)));
+    else if (lens.every((l, i) => l === i + 1)) rows.forEach((r, i) => r.forEach((v, j) => (M[i][j] = M[j][i] = v)));
+    else if (lens.every((l, i) => l === k - i)) rows.forEach((r, i) => r.forEach((v, jj) => { const j = i + jj; M[i][j] = M[j][i] = v; }));
+    else throw new Error(`Could not read a square matrix: ${k} rows with ${[...new Set(lens)].join('/')} values. Use a full matrix or a lower triangle including the diagonal.`);
+    for (let i = 0; i < k; i++) {
+      if (!(M[i][i] > 0)) throw new Error(`Diagonal entry ${i + 1} must be positive.`);
+      for (let j = 0; j < i; j++) {
+        if (Math.abs(M[i][j] - M[j][i]) > 1e-6 * Math.max(1, Math.abs(M[i][j]))) throw new Error(`The matrix is not symmetric (row ${i + 1}, column ${j + 1}).`);
+      }
+    }
+    let names = (header && header.length === k) ? header : labels.every(l => l) ? labels : [...Array(k).keys()].map(i => 'Item' + (i + 1));
+    const looksCor = M.every((r, i) => Math.abs(r[i] - 1) < 1e-6) && M.every(r => r.every(v => Math.abs(v) <= 1 + 1e-9));
+    return { M, names, k, looksCor };
+  }
+  // Analyze a subset of a parsed matrix. type: 'covariance' | 'correlation'. reverse: array of names.
+  function analyzeMatrix(pm, cols, { type = 'covariance', basis = 'covariance', nf = 3, n = null, level = 0.95, reverse = [] } = {}) {
+    const idx = cols.map(c => pm.names.indexOf(c));
+    const sgn = cols.map(c => (reverse.includes(c) ? -1 : 1));
+    const M = idx.map((a, i) => idx.map((b, j) => pm.M[a][b] * sgn[i] * sgn[j]));
+    if (type === 'correlation') {
+      if (M.some((r, i) => Math.abs(r[i] - 1) > 1e-4)) throw new Error('A correlation matrix needs 1s on the diagonal. Switch the input type to covariance matrix.');
+      if (M.some(r => r.some(v => Math.abs(v) > 1 + 1e-9))) throw new Error('A correlation matrix cannot have entries beyond ±1.');
+      return fromMatrices(null, M, cols, { nf, n, level, basis: 'correlation' });
+    }
+    const sd = M.map((r, i) => Math.sqrt(r[i]));
+    const R = M.map((r, i) => r.map((v, j) => v / (sd[i] * sd[j])));
+    return fromMatrices(M, R, cols, { nf, n, level, basis, sd });
+  }
+
+  const API = { analyze, analyzeMatrix, parseMatrix, fromMatrices, mapTest, parallelAnalysis, suggestFactors, alphaAnalysis, alphaFromMatrix, omegaFromR, parseData, prepare, covCor, paf, oblimin, eigSym, fQuantile, inv, mul, T };
+  if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.Reliability = API;
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const f2 = v => (isFinite(v) ? v.toFixed(2).replace(/^(-?)0\./, '$1.') : '—');
+  const f3 = v => (isFinite(v) ? v.toFixed(3).replace(/^(-?)0\./, '$1.') : '—');
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let mode = 'raw', src = null, selected = new Set(), reversed = new Set(), isExample = false, last = null, userBasis = 'covariance';
+
+  // ---- seeded example: 12 Likert items, three 4-item facets sharing a general factor ----
+  function makeExample() {
+    let s = 20260929; const rnd = () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+    const z = () => { let u = 0; while (!u) u = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rnd()); };
+    const names = ['worry1','worry2','worry3','worry4r','tense1','tense2','tense3','tense4','sleep1','sleep2','sleep3r','sleep4'];
+    const lam = [.72,.66,.60,.55,.70,.64,.58,.62,.60,.66,.52,.58], grp = [0,0,0,0,1,1,1,1,2,2,2,2], gam = [.80,.72,.60];
+    const rows = [names.join(',')];
+    for (let i = 0; i < 300; i++) {
+      const G = z(), F = [z(), z(), z()];
+      rows.push(names.map((nm, j) => {
+        const ga = gam[grp[j]], lat = lam[j] * (ga * G + Math.sqrt(1 - ga * ga) * F[grp[j]]) + Math.sqrt(1 - lam[j] ** 2) * z();
+        let x = Math.round(3 + 1.15 * lat); x = Math.max(1, Math.min(5, x));
+        if (nm.endsWith('r')) x = 6 - x;
+        return (rnd() < 0.006) ? 'NA' : x;
+      }).join(','));
+    }
+    return rows.join('\n');
+  }
+  function exampleFor(m) {
+    const raw = makeExample();
+    if (m === 'raw') return { text: raw };
+    const p = Reliability.parseData(raw), { X } = Reliability.prepare(p, p.header), { C, R } = Reliability.covCor(X), h = p.header;
+    if (m === 'covariance') return { text: ['', ...h].join(',') + '\n' + C.map((r, i) => [h[i], ...r.map(v => v.toFixed(4))].join(',')).join('\n'), n: X.length };
+    return { text: h.join('\t') + '\n' + R.map((r, i) => r.slice(0, i + 1).map(v => v.toFixed(3)).join('\t')).join('\n'), n: X.length };
+  }
+
+  function setMode(m) {
+    mode = m;
+    document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-checked', b.dataset.mode === m));
+    document.querySelectorAll('[data-for="raw"]').forEach(e => (e.hidden = m !== 'raw'));
+    document.querySelectorAll('[data-for="matrix"]').forEach(e => (e.hidden = m === 'raw'));
+    const basis = $('basis');
+    if (m === 'correlation') { userBasis = basis.disabled ? userBasis : basis.value; basis.value = 'correlation'; basis.disabled = true; basis.title = 'A correlation matrix has no item variances, so calculations use correlations.'; }
+    else { if (basis.disabled) basis.value = userBasis; basis.disabled = false; basis.title = ''; }
+    $('revNote').innerHTML = m === 'raw'
+      ? 'Tick the items that make up the scale. Press <b>R</b> to reverse-score an item (score becomes min + max − score, using the observed range).'
+      : 'Tick the items that make up the scale. Press <b>R</b> to reverse-score an item (flips the sign of its row and column in the matrix).';
+    $('paste').placeholder = m === 'raw' ? 'item1,item2,item3,…\n4,5,3,…' : 'item1,item2,item3,…\n1\n.42,1\n.38,.51,1';
+    $('readData').textContent = m === 'raw' ? 'Read pasted data' : 'Read pasted matrix';
+    $('results').hidden = true;
+    if (isExample) loadExample();
+    else { src = null; $('itemsPanel').hidden = true; $('dataStatus').textContent = ''; $('paste').value = ''; }
+  }
+
+  function load(text, example) {
+    const st = $('dataStatus'); st.className = 'status';
+    try {
+      if (mode === 'raw') {
+        const parsed = Reliability.parseData(text);
+        const numeric = parsed.header.filter((h, j) => parsed.rows.some(r => r[j] !== undefined && r[j] !== '' && isFinite(Number(r[j]))));
+        src = { kind: 'raw', parsed, names: parsed.header };
+        selected = new Set(numeric);
+        st.textContent = `${parsed.rows.length} rows · ${parsed.header.length} columns read.` + (parsed.header.length > numeric.length ? ` ${parsed.header.length - numeric.length} non-numeric column(s) left unticked.` : '');
+      } else {
+        const pm = Reliability.parseMatrix(text);
+        if (mode === 'correlation' && !pm.looksCor) throw new Error('This does not look like a correlation matrix (diagonal must be 1 and entries within ±1). Switch the input type to Covariance matrix.');
+        src = { kind: 'matrix', pm, names: pm.names };
+        selected = new Set(pm.names);
+        st.textContent = `${pm.k} × ${pm.k} matrix read.` + (mode === 'covariance' && pm.looksCor ? ' Its diagonal is all 1s, so covariance and correlation results will match.' : '');
+      }
+      isExample = example;
+      reversed = new Set(example ? src.names.filter(h => /r$/.test(h)) : []);
+      $('exampleTag').hidden = !example;
+      renderItems(); $('itemsPanel').hidden = false;
+      nfTouched = false; suggest();
+      return true;
+    } catch (e) { st.className = 'status err'; st.textContent = e.message; return false; }
+  }
+  function loadExample() {
+    const ex = exampleFor(mode);
+    $('paste').value = ex.text; $('nInput').value = ex.n || '';
+    if (load(ex.text, true)) run();
+  }
+
+  function renderItems() {
+    const box = $('items'); box.innerHTML = '';
+    src.names.forEach((h, i) => {
+      const d = document.createElement('div'); d.className = 'item';
+      d.innerHTML = `<input type="checkbox" id="it${i}" ${selected.has(h) ? 'checked' : ''}><label class="nm" for="it${i}" title="${esc(h)}">${esc(h)}</label><button type="button" class="rev" aria-pressed="${reversed.has(h)}" title="Reverse-score ${esc(h)}">R</button>`;
+      d.querySelector('input').onchange = e => { e.target.checked ? selected.add(h) : selected.delete(h); updateNf(); scheduleSuggest(); };
+      const b = d.querySelector('.rev');
+      b.onclick = () => { reversed.has(h) ? reversed.delete(h) : reversed.add(h); b.setAttribute('aria-pressed', reversed.has(h)); };
+      box.appendChild(d);
+    });
+    updateNf();
+  }
+  function updateNf() {
+    const sel = $('nf'), cur = +sel.value || 3, max = Math.max(1, Math.min(8, Math.floor(selected.size / 3)));
+    sel.innerHTML = '';
+    for (let k = 1; k <= max; k++) sel.insertAdjacentHTML('beforeend', `<option value="${k}">${k}</option>`);
+    sel.value = String(Math.min(cur, max));
+  }
+
+  // ---- suggested number of group factors ----
+  let suggestion = null, nfTouched = false, suggestTimer = null;
+  function currentR() {
+    const cols = src.names.filter(h => selected.has(h));
+    if (cols.length < 3) return null;
+    if (src.kind === 'raw') {
+      const { X } = Reliability.prepare(src.parsed, cols);
+      return { R: Reliability.covCor(X).R, n: X.length };
+    }
+    const idx = cols.map(c => src.pm.names.indexOf(c)), M = idx.map(a => idx.map(b => src.pm.M[a][b]));
+    const sd = M.map((r, i) => Math.sqrt(r[i]));
+    const nRaw = $('nInput').value.trim(), n = nRaw && +nRaw >= 2 ? Math.round(+nRaw) : null;
+    return { R: M.map((r, i) => r.map((v, j) => v / (sd[i] * sd[j]))), n };
+  }
+  function suggest() {
+    const note = $('nfNote');
+    try {
+      const cur = src && currentR();
+      if (!cur) { suggestion = null; note.textContent = ''; $('useSuggestion').hidden = true; return; }
+      suggestion = Reliability.suggestFactors(cur.R, cur.n);
+      if (!nfTouched) $('nf').value = String(suggestion.nf);
+      describeSuggestion();
+    } catch (e) { suggestion = null; note.textContent = ''; }
+  }
+  function scheduleSuggest() { clearTimeout(suggestTimer); $('nfNote').textContent = 'Checking the number of factors…'; suggestTimer = setTimeout(suggest, 30); }
+  function describeSuggestion() {
+    const s = suggestion, note = $('nfNote'); if (!s) return;
+    const mapTxt = `MAP suggests ${s.map.mOrig} (revised MAP: ${s.map.mRev}), but MAP tends to suggest too few factors when a general factor is strong.`;
+    let t;
+    if (s.pa) {
+      t = `<b>Parallel analysis suggests ${s.raw} factor${s.raw === 1 ? '' : 's'}</b> (n = ${s.pa.n}).`;
+      if (s.floored) t += ` That points to an essentially unidimensional scale; 2 group factors is the minimum for ω<sub>h</sub>, so ω<sub>h</sub> may be unstable here.`;
+      if (s.capped) t += ` That is more than the ${s.cap} this many items can support (3 items per factor).`;
+      t += ' ' + mapTxt;
+    } else {
+      t = `<b>Enter the sample size</b> to get a parallel-analysis suggestion. ` + (s.nf === 3 ? `Using psych's default of 3 group factors until then. ` : `Using ${s.nf} group factors until then (psych's default of 3 needs at least 9 items). `) + mapTxt;
+    }
+    const chosen = +$('nf').value;
+    if (nfTouched && chosen !== s.nf) t += ` You chose ${chosen}.`;
+    note.innerHTML = t;
+    $('useSuggestion').hidden = !(nfTouched && chosen !== s.nf && s.pa);
+  }
+
+  function run() {
+    const st = $('runStatus'); st.className = 'status';
+    try {
+      if (!src) throw new Error('Read some data first.');
+      const cols = src.names.filter(h => selected.has(h));
+      if (cols.length < 3) throw new Error('Tick at least 3 items.');
+      const nf = +$('nf').value, level = +$('level').value, basis = $('basis').value;
+      const revList = cols.filter(c => reversed.has(c));
+      let res, msg;
+      if (src.kind === 'raw') {
+        const rev = {}; revList.forEach(c => (rev[c] = true));
+        const { X, dropped } = Reliability.prepare(src.parsed, cols, rev);
+        res = Reliability.analyze(X, cols, nf, level, basis);
+        msg = `Computed on n = ${X.length}` + (dropped ? ` (${dropped} incomplete row${dropped > 1 ? 's' : ''} dropped).` : '.');
+      } else {
+        const nRaw = $('nInput').value.trim(), n = nRaw ? Math.round(+nRaw) : null;
+        if (nRaw && !(n >= 2)) throw new Error('Sample size must be a whole number of at least 2, or left blank.');
+        res = Reliability.analyzeMatrix(src.pm, cols, { type: mode, basis, nf, n, level, reverse: revList });
+        msg = `Computed from the ${mode} matrix` + (n ? ` (n = ${n}).` : '. Add n to get a confidence interval for alpha.');
+      }
+      res.cols = cols; res.reversed = revList; res.inputType = src.kind === 'raw' ? 'raw data' : `${mode} matrix`;
+      res.nfSource = suggestion && nf === suggestion.nf && !nfTouched ? (suggestion.pa ? 'suggested by parallel analysis' : 'default') : 'your choice';
+      res.suggestion = suggestion;
+      msg += ` ${nf} group factor${nf > 1 ? 's' : ''} (${res.nfSource}).`;
+      last = res; render(res); st.textContent = msg;
+    } catch (e) { st.className = 'status err'; st.textContent = e.message; $('results').hidden = true; }
+  }
+
+  function render(res) {
+    const a = res.alpha, o = res.omega, pct = Math.round(a.level * 100), cov = res.basis === 'covariance';
+    const basisTxt = cov ? 'raw-score basis' : 'standardized basis';
+    const stats = [
+      [cov ? 'Coefficient α' : 'Coefficient α (standardized)', f2(a.alpha), a.ci ? `${pct}% CI [${f2(a.ci[0])}, ${f2(a.ci[1])}]` : 'CI needs sample size', true],
+      ['ω hierarchical', f2(o.omegaH), o.nf === 1 ? 'needs ≥ 2 group factors' : `general factor only · ${basisTxt}`, true],
+      ['ω total', f2(o.omegaT), `general + group factors · ${basisTxt}`],
+      ['ωh / ωt', f2(o.omegaHOverT), 'share of reliable variance due to g'],
+      ['ECV', f2(o.ECV), 'common variance explained by g'],
+      cov ? ['Standardized α', f2(a.stdAlpha), `mean inter-item r = ${f2(a.meanR)}`] : ['Mean inter-item r', f2(a.meanR), `${a.k} items`],
+      ['Sample', a.n ? `${a.n}` : '—', `${a.k} items · ${o.nf} group factor${o.nf > 1 ? 's' : ''} · ${res.inputType}`],
+    ];
+    $('summary').innerHTML = stats.map(([l, v, s, key]) => `<div class="stat${key ? ' key' : ''}"><span class="eyebrow">${l}</span><span class="v">${v}</span><span class="sub">${s}</span></div>`).join('');
+
+    const warn = [...o.warnings];
+    const negIt = a.items.filter((it, i) => it.rDrop < 0 || o.items[i].g < 0).map(it => it.name);
+    if (negIt.length) warn.push(`Negative item–total correlation or g loading: ${negIt.map(esc).join(', ')}. Check whether these need reverse scoring.`);
+    if (res.reversed.length) warn.push(`Reverse-scored: ${res.reversed.map(esc).join(', ')}.`);
+    $('warnings').innerHTML = warn.map(w => `<div>${w}</div>`).join('');
+
+    const showMean = a.items.some(it => isFinite(it.mean)), showSD = a.items.some(it => isFinite(it.sd));
+    const fk = [...Array(o.nf).keys()].map(j => `F${j + 1}`);
+    const cellL = v => `<td class="${Math.abs(v) >= 0.2 ? 'strong' : 'faint'}">${f2(v)}</td>`;
+    const pre = (showMean ? 1 : 0) + (showSD ? 1 : 0) + 2;
+    $('itemTable').innerHTML = `<thead><tr><th>Item</th>${showMean ? '<th>Mean</th>' : ''}${showSD ? '<th>SD</th>' : ''}<th>r.drop</th><th>α if deleted</th><th>g</th>${o.nf > 1 ? fk.map(f => `<th>${f}</th>`).join('') : ''}<th>h²</th><th>u²</th></tr></thead><tbody>` +
+      a.items.map((it, i) => { const oi = o.items[i]; return `<tr><td>${esc(it.name)}${res.reversed.includes(it.name) ? ' <span class="faint">(R)</span>' : ''}</td>${showMean ? `<td>${f2(it.mean)}</td>` : ''}${showSD ? `<td>${f2(it.sd)}</td>` : ''}<td class="${it.rDrop < 0 ? 'flag' : ''}">${f2(it.rDrop)}</td><td>${f3(it.alphaIfDeleted)}</td>${oi.g < 0 ? `<td class="flag">${f2(oi.g)}</td>` : cellL(oi.g)}${o.nf > 1 ? oi.s.map(cellL).join('') : ''}<td>${f2(oi.h2)}</td><td>${f2(oi.u2)}</td></tr>`; }).join('') +
+      `</tbody><tfoot><tr><td>Σ loadings²</td>${'<td></td>'.repeat(pre)}<td>${f2(o.items.reduce((s, x) => s + x.g * x.g, 0))}</td>${o.nf > 1 ? fk.map((_, j) => `<td>${f2(o.items.reduce((s, x) => s + x.s[j] ** 2, 0))}</td>`).join('') : ''}<td></td><td></td></tr></tfoot>`;
+
+    $('groupTable').innerHTML = `<thead><tr><th>Factor</th><th>Items</th><th>g loading of factor</th><th>ω</th><th>ω<sub>hs</sub></th></tr></thead><tbody>` +
+      o.groups.map((g, j) => `<tr><td>F${g.factor}</td><td style="text-align:left;white-space:normal;min-width:180px">${g.items.map(esc).join(', ') || '<span class="faint">no items</span>'}</td><td>${f2(o.firstOrder.gLoadings[j])}</td><td>${f2(g.omega)}</td><td>${f2(g.omegaHS)}</td></tr>`).join('') + '</tbody>';
+
+    const L = o.firstOrder.loadings;
+    $('obliqueTable').innerHTML = `<thead><tr><th>Oblimin pattern</th>${fk.map(f => `<th>${f}</th>`).join('')}</tr></thead><tbody>` +
+      res.cols.map((c, i) => `<tr><td>${esc(c)}</td>${L[i].map(cellL).join('')}</tr>`).join('') + '</tbody>';
+    const P = o.firstOrder.Phi;
+    $('phiTable').innerHTML = `<thead><tr><th>Factor correlations</th>${fk.map(f => `<th>${f}</th>`).join('')}</tr></thead><tbody>` +
+      P.map((r, i) => `<tr><td>F${i + 1}</td>${r.map(v => `<td>${f2(v)}</td>`).join('')}</tr>`).join('') + '</tbody>';
+    $('eigen').innerHTML = `<b>Eigenvalues of the correlation matrix:</b> ${o.eigenvalues.map(v => v.toFixed(2)).join(', ')}. A dominant first eigenvalue supports a strong general factor.`;
+    renderCounts(res.suggestion);
+    $('results').hidden = false;
+  }
+
+  function renderCounts(s) {
+    if (!s) { $('paTable').innerHTML = $('mapTable').innerHTML = ''; $('countNote').textContent = ''; return; }
+    const rows = Math.min(s.map.orig.length, 10);
+    if (s.pa) {
+      const fa = s.pa.fa, pc = s.pa.pc, q = Math.round(s.pa.quantile * 100);
+      $('paTable').innerHTML = `<thead><tr><th>Parallel analysis</th><th>Factor eigenvalue</th><th>Random ${q}th pct.</th><th>Component eigenvalue</th><th>Random ${q}th pct.</th></tr></thead><tbody>` +
+        [...Array(Math.min(rows, pc.observed.length)).keys()].map(i => {
+          const kf = fa && fa.observed[i] > fa.random[i] && i < fa.m, kp = pc.observed[i] > pc.random[i] && i < pc.m;
+          return `<tr><td>${i + 1}</td><td class="${kf ? 'strong' : 'faint'}">${fa ? fa.observed[i].toFixed(2) : '—'}</td><td>${fa ? fa.random[i].toFixed(2) : '—'}</td><td class="${kp ? 'strong' : 'faint'}">${pc.observed[i].toFixed(2)}</td><td>${pc.random[i].toFixed(2)}</td></tr>`;
+        }).join('') + `</tbody><tfoot><tr><td>Retained</td><td class="strong">${fa ? fa.m : '—'}</td><td></td><td>${pc.m}</td><td></td></tr></tfoot>`;
+    } else $('paTable').innerHTML = '';
+    const mn = a => a.reduce((b, v, i) => (v < a[b] ? i : b), 0), io = mn(s.map.orig), ir = mn(s.map.rev);
+    $('mapTable').innerHTML = `<thead><tr><th>Velicer's MAP · components removed</th><th>Avg. r² (1976)</th><th>Avg. r⁴ (2000)</th></tr></thead><tbody>` +
+      [...Array(rows).keys()].map(m => `<tr><td>${m}</td><td class="${m === io ? 'strong' : 'faint'}">${s.map.orig[m].toFixed(4)}</td><td class="${m === ir ? 'strong' : 'faint'}">${s.map.rev[m].toFixed(5)}</td></tr>`).join('') + '</tbody>';
+    $('countNote').innerHTML = (s.pa ? `Parallel analysis used ${s.pa.reps} random data sets of the same size (n = ${s.pa.n}); the preselection uses the factor version. ` : 'Parallel analysis needs the sample size. ') +
+      'MAP picks the row with the smallest average partial correlation (bold). It is shown for reference only.';
+  }
+
+  function asTable(res) {
+    const a = res.alpha, o = res.omega, fk = [...Array(o.nf).keys()].map(j => `F${j + 1}`), x3 = v => (isFinite(v) ? v.toFixed(3) : '');
+    const L = [
+      ['input', res.inputType], ['basis', res.basis], ['n', a.n ?? ''], ['items', a.k], ['group factors', o.nf],
+      ['alpha', x3(a.alpha)], [`alpha ${Math.round(a.level * 100)}% CI`, a.ci ? `${x3(a.ci[0])} to ${x3(a.ci[1])}` : ''],
+      ['standardized alpha', x3(a.stdAlpha)], ['omega hierarchical', x3(o.omegaH)], ['omega total', x3(o.omegaT)], ['ECV', x3(o.ECV)], [],
+      ['item', 'mean', 'sd', 'r.drop', 'alpha if deleted', 'g', ...(o.nf > 1 ? fk : []), 'h2', 'u2'],
+      ...a.items.map((it, i) => [it.name, x3(it.mean), x3(it.sd), x3(it.rDrop), x3(it.alphaIfDeleted), x3(o.items[i].g), ...(o.nf > 1 ? o.items[i].s.map(x3) : []), x3(o.items[i].h2), x3(o.items[i].u2)])
+    ];
+    return L.map(r => r.join('\t')).join('\n');
+  }
+
+  $('copy').onclick = async () => {
+    if (!last) return; const t = asTable(last), b = $('copy');
+    try { await navigator.clipboard.writeText(t); b.textContent = 'Copied'; }
+    catch { $('paste').value = t; $('paste').select(); b.textContent = 'Results placed in the data box; press Ctrl/⌘+C'; }
+    setTimeout(() => (b.textContent = 'Copy results as table'), 2500);
+  };
+  document.querySelectorAll('.seg button').forEach(b => (b.onclick = () => { if (b.dataset.mode !== mode) setMode(b.dataset.mode); }));
+  let workbook = null;
+  const readSheet = name => {
+    const csv = XLSX.utils.sheet_to_csv(workbook.Sheets[name], { blankrows: false, rawNumbers: true });
+    $('paste').value = csv;
+    if (load(csv, false)) { $('results').hidden = true; $('dataStatus').textContent = `Sheet “${name}”: ` + $('dataStatus').textContent; }
+  };
+  $('sheetSel').onchange = e => readSheet(e.target.value);
+  $('file').onchange = e => {
+    const f = e.target.files[0]; if (!f) return; e.target.value = '';
+    const r = new FileReader();
+    if (/\.(xlsx|xlsm|xls|ods)$/i.test(f.name)) {
+      if (typeof XLSX === 'undefined') { $('dataStatus').className = 'status err'; $('dataStatus').textContent = 'The Excel reader did not load. Check your connection and reload, or save the sheet as CSV.'; return; }
+      r.onload = () => {
+        try {
+          workbook = XLSX.read(new Uint8Array(r.result), { type: 'array' });
+          const names = workbook.SheetNames;
+          $('sheetSel').innerHTML = names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+          $('sheetWrap').hidden = names.length < 2;
+          readSheet(names[0]);
+        } catch (err) { $('dataStatus').className = 'status err'; $('dataStatus').textContent = 'Could not read this workbook: ' + err.message; }
+      };
+      r.readAsArrayBuffer(f);
+    } else {
+      workbook = null; $('sheetWrap').hidden = true;
+      r.onload = () => { $('paste').value = r.result; if (load(r.result, false)) $('results').hidden = true; };
+      r.readAsText(f);
+    }
+  };
+  $('readData').onclick = () => { if (load($('paste').value, false)) $('results').hidden = true; };
+  $('loadExample').onclick = loadExample;
+  $('clear').onclick = () => { $('sheetWrap').hidden = true; workbook = null; $('paste').value = ''; $('nInput').value = ''; src = null; isExample = false; $('itemsPanel').hidden = true; $('results').hidden = true; $('exampleTag').hidden = true; $('dataStatus').textContent = ''; };
+  $('selAll').onclick = () => { selected = new Set(src.names); renderItems(); scheduleSuggest(); };
+  $('selNone').onclick = () => { selected.clear(); renderItems(); scheduleSuggest(); };
+  $('nf').onchange = () => { nfTouched = true; describeSuggestion(); };
+  $('useSuggestion').onclick = () => { if (!suggestion) return; nfTouched = false; $('nf').value = String(suggestion.nf); describeSuggestion(); if (last) run(); };
+  $('nInput').onchange = () => { if (src && src.kind === 'matrix') scheduleSuggest(); };
+  $('basis').onchange = () => { if (last) run(); };
+  $('run').onclick = run;
+  setMode('raw'); loadExample();
+})();
+</script>
+</body>
+</html>
