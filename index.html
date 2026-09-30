@@ -67,6 +67,26 @@ td.strong { font-weight: 600; color: var(--ink); }
 td.faint { color: var(--muted); }
 td.flag { color: var(--bad); font-weight: 600; }
 .note { font-size: 13.5px; color: var(--muted); max-width: 72ch; }
+.pd-fig { margin: 0; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.pd-wrap { overflow-x: auto; }
+.pd-wrap svg { display: block; width: 100%; height: auto; margin: 0 auto; }
+.pd-line-g { stroke: var(--accent); fill: none; }
+.pd-line-s { stroke: var(--ink); fill: none; opacity: .72; }
+.pd-cross { stroke-dasharray: 4 3; opacity: .5; }
+.pd-neg { stroke: var(--bad); stroke-dasharray: 5 3; opacity: 1; }
+.pd-head-g { fill: var(--accent); }
+.pd-head-s { fill: var(--ink); opacity: .72; }
+.pd-head-neg { fill: var(--bad); }
+.pd-fac-g { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.pd-fac-s { fill: var(--surface); stroke: var(--ink); stroke-width: 1.2; }
+.pd-item { fill: var(--bg); stroke: var(--muted); stroke-width: 1; }
+.pd-fac-text { font: 600 15px var(--f-display); fill: var(--ink); }
+.pd-name { font: 500 11.5px var(--f-mono); fill: var(--ink); }
+.pd-u2 { font: 10.5px var(--f-mono); fill: var(--muted); }
+.pd-lab { font: 500 11px var(--f-mono); fill: var(--ink); paint-order: stroke; stroke: var(--surface); stroke-width: 3.5px; stroke-linejoin: round; }
+.pd-lab-g { fill: var(--accent); }
+.pd-lab-neg { fill: var(--bad); }
+.pd-side { font: 11.5px var(--f-body); fill: var(--muted); }
 .warnings { display: flex; flex-direction: column; gap: 6px; }
 .warnings div { background: var(--warn-soft); color: var(--warn); padding: 8px 12px; border-radius: 7px; font-size: 13.5px; }
 details summary { cursor: pointer; font-weight: 600; }
@@ -133,6 +153,14 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
     </div>
     <div class="summary" id="summary"></div>
     <div class="warnings" id="warnings"></div>
+
+    <div class="panel">
+      <span class="eyebrow">Bifactor path diagram</span>
+      <figure class="pd-fig">
+        <div class="pd-wrap" id="pathWrap"></div>
+        <figcaption id="pathCap" class="note"></figcaption>
+      </figure>
+    </div>
 
     <div class="panel">
       <span class="eyebrow">Item statistics and Schmid–Leiman loadings</span>
@@ -831,7 +859,77 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
       P.map((r, i) => `<tr><td>F${i + 1}</td>${r.map(v => `<td>${f2(v)}</td>`).join('')}</tr>`).join('') + '</tbody>';
     $('eigen').innerHTML = `<b>Eigenvalues of the correlation matrix:</b> ${o.eigenvalues.map(v => v.toFixed(2)).join(', ')}. A dominant first eigenvalue supports a strong general factor.`;
     renderCounts(res.suggestion);
+    drawPath(res);
     $('results').hidden = false;
+  }
+
+  // ---- bifactor path diagram (inline SVG built from the Schmid–Leiman solution) ----
+  function drawPath(res) {
+    const o = res.omega, nf = o.nf, items = o.items, names = res.cols, p = items.length;
+    const assign = nf > 1 ? items.map(it => it.s.reduce((b, v, j) => (Math.abs(v) > Math.abs(it.s[b]) ? j : b), 0)) : items.map(() => -1);
+    const order = [...Array(p).keys()].sort((a, b) => assign[a] - assign[b] || a - b);
+    const short = s => (s.length > 10 ? s.slice(0, 9) + '…' : s);
+    const boxW = i => Math.max(50, Math.round(short(names[i]).length * 7.2 + 16));
+    const gap = 10, mx = 24, yG = 50, r = 26, yI = 200, hI = 40, yF = 352;
+    let x = 0; const pos = {};
+    order.forEach(i => { const w = boxW(i); pos[i] = { x: x + w / 2, w }; x += w + gap; });
+    const content = x - gap, W = Math.max(content + 2 * mx, 360), off = (W - content) / 2;
+    order.forEach(i => (pos[i].x += off));
+    const H = nf > 1 ? yF + r + 22 : yI + hI + 22, gx = W / 2;
+    const sw = v => (0.8 + 2.4 * Math.min(1, Math.abs(v))).toFixed(2);
+    const edge = (cx, cy, tx, ty) => { const dx = tx - cx, dy = ty - cy, d = Math.hypot(dx, dy); return [cx + r * dx / d, cy + r * dy / d]; };
+    let lines = '', labels = '', negSeen = false, crossSeen = false;
+    const path = (x1, y1, x2, y2, v, kind, t, extra = '') => {
+      const neg = v < 0; if (neg) negSeen = true;
+      const cls = neg ? 'pd-neg' : kind === 'g' ? 'pd-line-g' : 'pd-line-s';
+      const head = neg ? 'neg' : kind === 'g' ? 'g' : 's';
+      lines += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" class="${cls}${extra}" stroke-width="${sw(v)}" marker-end="url(#pd-${head})"/>`;
+      const lx = x1 + (x2 - x1) * t, ly = y1 + (y2 - y1) * t;
+      labels += `<text x="${lx.toFixed(1)}" y="${(ly + 4).toFixed(1)}" text-anchor="middle" class="pd-lab${neg ? ' pd-lab-neg' : kind === 'g' ? ' pd-lab-g' : ''}">${f2(v)}</text>`;
+    };
+    // general-factor paths
+    order.forEach(i => { const [sx, sy] = edge(gx, yG, pos[i].x, yI); path(sx, sy, pos[i].x, yI - 1, items[i].g, 'g', 0.74); });
+    // group-factor paths (primary loading solid; cross-loadings of |.20| or more dashed)
+    const fx = [];
+    if (nf > 1) {
+      for (let j = 0; j < nf; j++) {
+        const mem = order.filter(i => assign[i] === j);
+        fx[j] = mem.length ? mem.reduce((s, i) => s + pos[i].x, 0) / mem.length : null;
+      }
+      // spread any factor that has no primary items between its neighbours
+      fx.forEach((v, j) => { if (v === null) fx[j] = off + content * (j + 0.5) / nf; });
+      order.forEach(i => items[i].s.forEach((v, j) => {
+        const primary = j === assign[i];
+        if (!primary && Math.abs(v) < 0.2) return;
+        if (!primary) crossSeen = true;
+        const [sx, sy] = edge(fx[j], yF, pos[i].x, yI + hI);
+        path(sx, sy, pos[i].x, yI + hI + 1, v, 's', primary ? 0.62 : 0.5, primary ? '' : ' pd-cross');
+      }));
+    }
+    let nodes = `<circle cx="${gx}" cy="${yG}" r="${r}" class="pd-fac-g"/><text x="${gx}" y="${yG + 5}" text-anchor="middle" class="pd-fac-text">g</text>` +
+      `<text x="${gx + r + 10}" y="${yG + 4}" class="pd-side">general factor</text>`;
+    order.forEach(i => {
+      const { x: cx, w } = pos[i];
+      nodes += `<g><title>${esc(names[i])}: g ${f2(items[i].g)}, h² ${f2(items[i].h2)}, u² ${f2(items[i].u2)}</title>` +
+        `<rect x="${(cx - w / 2).toFixed(1)}" y="${yI}" width="${w}" height="${hI}" rx="4" class="pd-item"/>` +
+        `<text x="${cx.toFixed(1)}" y="${yI + 17}" text-anchor="middle" class="pd-name">${esc(short(names[i]))}</text>` +
+        `<text x="${cx.toFixed(1)}" y="${yI + 32}" text-anchor="middle" class="pd-u2">u² ${f2(items[i].u2)}</text></g>`;
+    });
+    for (let j = 0; j < nf && nf > 1; j++) {
+      nodes += `<circle cx="${fx[j].toFixed(1)}" cy="${yF}" r="${r}" class="pd-fac-s"/><text x="${fx[j].toFixed(1)}" y="${yF + 5}" text-anchor="middle" class="pd-fac-text">F${j + 1}</text>`;
+    }
+    const defs = `<defs>${['g', 's', 'neg'].map(k => `<marker id="pd-${k}" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L8,4 L0,8 z" class="pd-head-${k}"/></marker>`).join('')}</defs>`;
+    const claim = nf > 1
+      ? `Bifactor path diagram: every one of the ${p} items loads on the general factor g and on one of ${nf} group factors; all factors are uncorrelated.`
+      : `Path diagram: all ${p} items load on a single factor g.`;
+    $('pathWrap').innerHTML = `<svg viewBox="0 0 ${W.toFixed(0)} ${H}" role="img" aria-label="${esc(claim)}" style="min-width:${Math.min(W, Math.max(360, p * 46)).toFixed(0)}px;max-width:${W.toFixed(0)}px">${defs}${lines}${nodes}${labels}</svg>`;
+    let cap = nf > 1
+      ? 'Schmid–Leiman bifactor solution. Every item loads on the general factor g (top) and on one group factor (bottom), and all factors are uncorrelated. Numbers are standardized loadings, line width shows their size, and u² is each item’s unique variance.'
+      : 'With one group factor there is no bifactor split, so the diagram shows the single factor. Choose 2 or more group factors to see the general and group factors separately.';
+    if (crossSeen) cap += ' Dashed lines are cross-loadings of |.20| or more on a second group factor.';
+    if (negSeen) cap += ' Red dashed lines are negative loadings.';
+    if (nf === 2) cap += ' With two group factors the g loadings rest on psych’s equal-loading convention (see the note above).';
+    $('pathCap').textContent = cap;
   }
 
   function renderCounts(s) {
