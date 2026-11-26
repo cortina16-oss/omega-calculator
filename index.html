@@ -93,6 +93,16 @@ details summary { cursor: pointer; font-weight: 600; }
 details .body { padding-top: 10px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; max-width: 72ch; }
 code { font-family: var(--f-mono); font-size: 12.5px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+.ss-panel { border-color: var(--accent); }
+.ss-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; }
+.ss-val { font: 500 30px/1.1 var(--f-display); color: var(--accent); font-variant-numeric: tabular-nums; }
+.ss-sub { font-size: 13.5px; color: var(--muted); }
+.ss-panel h3 { font: 600 15px var(--f-body); margin: 0; }
+.ss-steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; max-width: 76ch; font-size: 14px; }
+.ss-groups { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.ss-item { display: flex; align-items: center; gap: 8px; font: 13px var(--f-mono); }
+.ss-item select { font: 13px var(--f-body); }
+.ss-caveat { background: var(--warn-soft); color: var(--warn); padding: 10px 12px; border-radius: 7px; font-size: 13.5px; max-width: 90ch; }
 .cite-box { margin-top: 12px; padding: 10px 14px; font-size: 14px; line-height: 1.55; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; max-width: 80ch; overflow-wrap: anywhere; }
 .cite-box-ref { display: block; margin-top: 4px; color: var(--ink); }
 </style>
@@ -103,7 +113,7 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
     <h1>Omega &amp; Alpha Calculator</h1>
     <p>Enter item-level survey data, or a covariance or correlation matrix, to get coefficient alpha and omega-hierarchical from a Schmid–Leiman bifactor solution. Everything runs in your browser; your data never leave this page.</p>
     <p style="margin-top:10px">Omega-h requires that the number of group factors be specified. You can specify a number of group factors or the tool will do it automatically using parallel analysis.</p>
-    <p style="margin-top:10px">Most scales today have six or fewer items. A usable bifactor model needs at least six items, two group factors of three items each, and even then the general factor is identified only by constraining its loadings to be equal; with nine or more items (three group factors of three), no constraint is needed. For shorter scales, the tool fits a single factor and checks the residual correlations. If one factor accounts for the correlations, ω is the reliability of the general factor; if it doesn't, α and ω overstate it, and more items would be needed to estimate ω<sub>h</sub>.</p>
+    <p style="margin-top:10px">Most scales today have six or fewer items. A usable bifactor model needs at least six items, two group factors of three items each, and even then the general factor is identified only by constraining its loadings to be equal; with nine or more items (three group factors of three), no constraint is needed. For shorter scales, the tool fits a single factor and checks the residual correlations. If one factor accounts for the correlations, ω is the reliability of the general factor. If it doesn't, α and ω overstate it; for four- or five-item scales, the tool then also gives a conservative estimate of ω<sub>h</sub> from a bifactor model with equal general-factor loadings, and a panel in the results explains what you need to check before using it.</p>
     <div class="cite-box">If you publish results produced with this tool or use it in teaching, please cite it as: <span class="cite-box-ref">Cortina, J. M. (2026). <i>Omega &amp; Alpha Calculator</i> (Version 1.0) [Web application]. https://josecortina.com/omega-alpha-calculator</span></div>
   </header>
 
@@ -158,6 +168,18 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
     <div class="summary" id="summary"></div>
     <div class="warnings" id="warnings"></div>
 
+    <div class="panel ss-panel" id="ssPanel" hidden>
+      <span class="eyebrow">Short-scale estimate of ω<sub>h</sub></span>
+      <div class="ss-head"><span class="ss-val" id="ssVal"></span><span class="ss-sub" id="ssSub"></span></div>
+      <p class="note" id="ssWhy" style="margin:0;color:var(--ink)"></p>
+      <h3>What you need to do</h3>
+      <ol class="ss-steps" id="ssSteps"></ol>
+      <div class="ss-groups" id="ssGroups"></div>
+      <div class="row"><button id="ssRecompute" type="button" class="primary">Recompute with this grouping</button><span id="ssStatus" class="status"></span></div>
+      <div class="ss-caveat" id="ssCaveat"></div>
+      <p class="note" id="ssDetail" style="margin:0"></p>
+    </div>
+
     <div class="panel">
       <span class="eyebrow">Model check: do the factors account for the correlations?</span>
       <p id="fitLine" class="note" style="margin:0;color:var(--ink)"></p>
@@ -166,7 +188,7 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
     </div>
 
     <div class="panel">
-      <span class="eyebrow">Bifactor path diagram</span>
+      <span class="eyebrow" id="pathTitle">Bifactor path diagram</span>
       <p class="note" style="margin:0;color:var(--ink)">In a scale that is intended to be unidimensional, the loadings on the general factor should be large and the loadings on the group factors small. If this is the case, then omega-h (and alpha) will be large.</p>
       <p class="note" style="margin:0;color:var(--ink)">Large loadings on both the general factor and the group factors can produce large alphas but will produce smaller omega-h values. This is the primary advantage of omega-h.</p>
       <figure class="pd-fig">
@@ -176,7 +198,7 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
     </div>
 
     <div class="panel">
-      <span class="eyebrow">Item statistics and Schmid–Leiman loadings</span>
+      <span class="eyebrow" id="itemTitle">Item statistics and Schmid–Leiman loadings</span>
       <div class="tablewrap"><table id="itemTable"></table></div>
       <p class="note" style="margin:0"><b>r.drop</b> is the corrected item–total correlation. <b>g</b> is the loading on the general factor, <b>F1…Fk</b> are residualized group-factor loadings, <b>h²</b> communality, <b>u²</b> uniqueness. Loadings of |.20| or more are bold. Red marks a negative r.drop or g loading, which usually means an item needs reverse scoring.</p>
     </div>
@@ -205,6 +227,7 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
         <p><b>Input.</b> Raw data are reduced to a covariance matrix (listwise deletion). You can instead enter a covariance or correlation matrix directly, which gives identical results to the raw data it came from. Reverse scoring a matrix item flips the sign of its row and column, which is what reverse scoring does to the covariances. Item means are only available from raw data.</p>
         <p><b>Basis.</b> <i>Covariances</i> gives the reliability of the unit-weighted sum of raw item scores: raw alpha and omega with loadings rescaled by each item's SD. <i>Correlations</i> gives the reliability of the sum of standardized items: standardized alpha and the standardized omega reported by <code>psych::omega</code>. A correlation matrix carries no SDs, so it always uses the correlation basis. The two bases differ only when item variances differ.</p>
         <p><b>Number of group factors.</b> The tool preselects it with parallel analysis (Horn, 1965) in its common-factor form, as in <code>psych::fa.parallel</code>. It compares the eigenvalues of the correlation matrix, with squared multiple correlations on the diagonal, against the 95th percentile of eigenvalues from 100 random normal data sets of the same size, and keeps the leading factors that beat chance. When parallel analysis finds one factor, the tool fits one factor, and ω<sub>h</sub> is the one-factor ω; the suggestion is never above one factor per three items. You can override it. Velicer's MAP test (original 1976 and revised 2000) is reported for reference but not used to preselect, because with a strong general factor it usually suggests one factor. In simulated bifactor data with 3 to 5 group factors, the common-factor parallel analysis found the right number every time, while MAP usually returned 1. Parallel analysis needs n. For a matrix without n, the tool uses psych's default of 3 group factors when there are at least nine items; with six to eight items it uses 2 if a single factor leaves a residual correlation of .10 or more, and 1 otherwise; with fewer than six items it uses 1.</p>
+        <p><b>Short-scale estimate (four or five items).</b> When one factor fails the model check on a four- or five-item scale, the tool fits a bifactor model by maximum likelihood in which every item has the same general-factor loading and the items form two group factors (two pairs for four items; three items and two items for five). A two-item group factor needs equal loadings. These constraints make the model identified (df = 3 for four items, 5 for five); without them, no bifactor model with this few items can be estimated. For four items, the tool picks the pairing that fits best; for five, it starts from the two-factor exploratory pattern, and the researcher should confirm or change the grouping. In population tests, the estimate equaled the true ω<sub>h</sub> when general loadings were equal and was usually too low otherwise: by about .005 to .03 with mild to moderate inequality, about .06 with strong inequality, and by up to .12 when the items with the strongest general loadings formed one group factor, a case the fit test cannot detect. With five items, a wrong grouping can make the estimate too high. When one factor fits, the tool reports the one-factor ω instead, because on a unidimensional scale with unequal loadings the equal-loading model would underestimate ω<sub>h</sub> by about .10 or more.</p>
         <p><b>Model check.</b> Residual correlations are the observed correlations minus those implied by the reported solution. When n is known and the model has positive degrees of freedom, the tool also reports the maximum-likelihood χ² test of the k-factor model with Bartlett's correction, as in <code>factanal</code> and <code>psych::fa</code>, and its RMSEA. The fit test uses maximum likelihood; the loadings and omegas still come from minimum residual. For a one-factor solution, the tool warns that α and ω overstate the general factor when the test rejects at .05 and the largest residual is at least .05, or, without n, when the largest residual is at least .10. In simulations at n = 300, unidimensional 4- to 6-item scales drew this warning in 10% of samples or fewer, and 4- and 5-item scales with two group factors drew it in every sample.</p>
         <p><b>Alpha</b> is k/(k − 1) · (1 − Σ σ²ᵢ / σ²ₓ) on the chosen matrix. The confidence interval follows Feldt (1965), using the F distribution with n − 1 and (n − 1)(k − 1) degrees of freedom; it needs n.</p>
         <p><b>Omega</b> follows the defaults of <code>psych::omega</code> in R: minimum-residual (iterated principal axis) extraction of k factors from the correlation matrix, oblimin rotation, a single higher-order factor extracted from the factor correlations, then the Schmid–Leiman transformation. With two group factors the higher-order loadings are set equal to √r₁₂, as in psych. With one factor, that factor is g, so ω<sub>h</sub> = (Σλ)² / total variance; it equals ω<sub>t</sub> when one factor accounts for the correlations.</p>
@@ -690,8 +713,110 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
     if (zeroVar.length) throw new Error('No variance in: ' + zeroVar.join(', '));
     return { X, dropped: dropped.length, minmax };
   }
+  // ---------- short scales (4-5 items): equal-loading bifactor estimate of omega-h ----------
+  // Model: every item loads equally on g; items form two group factors (2+2 for four items,
+  // 3+2 for five). A two-item group factor has equal loadings; a three-item group factor's
+  // loadings are free. These constraints make the model identified (df = 3 for 2+2, 5 for 3+2).
+  // Fitted by maximum likelihood to the correlation matrix.
+  function cholesky(A) {
+    const n = A.length, L = zeros(n, n);
+    for (let i = 0; i < n; i++) for (let j = 0; j <= i; j++) {
+      let s = A[i][j]; for (let k = 0; k < j; k++) s -= L[i][k] * L[j][k];
+      if (i === j) { if (!(s > 1e-12)) return null; L[i][i] = Math.sqrt(s); } else L[i][j] = s / L[j][j];
+    }
+    return L;
+  }
+  function nelderMead(f, x0, { maxIter = 4000, tol = 1e-12, scale = 0.1 } = {}) {
+    const d = x0.length; let pts = [x0.slice()];
+    for (let i = 0; i < d; i++) { const x = x0.slice(); x[i] += scale; pts.push(x); }
+    let vals = pts.map(f);
+    for (let it = 0; it < maxIter; it++) {
+      const ord = [...vals.keys()].sort((a, b) => vals[a] - vals[b]); pts = ord.map(i => pts[i]); vals = ord.map(i => vals[i]);
+      if (Math.abs(vals[d] - vals[0]) < tol && it > 50) break;
+      const c = new Array(d).fill(0); for (let i = 0; i < d; i++) for (let j = 0; j < d; j++) c[j] += pts[i][j] / d;
+      const at = t => c.map((v, j) => v + t * (pts[d][j] - v));
+      const xr = at(-1), fr = f(xr);
+      if (fr < vals[0]) { const xe = at(-2), fe = f(xe); if (fe < fr) { pts[d] = xe; vals[d] = fe; } else { pts[d] = xr; vals[d] = fr; } }
+      else if (fr < vals[d - 1]) { pts[d] = xr; vals[d] = fr; }
+      else {
+        const xc = fr < vals[d] ? at(-0.5) : at(0.5), fc = f(xc);
+        if (fc < Math.min(fr, vals[d])) { pts[d] = xc; vals[d] = fc; }
+        else { for (let i = 1; i <= d; i++) { pts[i] = pts[i].map((v, j) => pts[0][j] + 0.5 * (v - pts[0][j])); vals[i] = f(pts[i]); } }
+      }
+    }
+    const b = vals.indexOf(Math.min(...vals)); return { x: pts[b], f: vals[b] };
+  }
+  // grp: group label (0 or 1) for each item. w: item weights (SDs) for the covariance basis, else null.
+  function equalLoadingFit(R, grp, n = null, w = null) {
+    const p = R.length;
+    const members = [0, 1].map(k => grp.map((g, i) => (g === k ? i : -1)).filter(i => i >= 0));
+    // parameter index of each item's group loading (pairs share one parameter)
+    const pidx = new Array(p); let k = 1;
+    members.forEach(m => { if (m.length === 2) { m.forEach(i => (pidx[i] = k)); k++; } else m.forEach(i => (pidx[i] = k++)); });
+    const df = (p * (p - 1)) / 2 - k;
+    const RL = cholesky(R); if (!RL) throw new Error('The correlation matrix is not positive definite.');
+    const logdetR = 2 * RL.reduce((t, r, i) => t + Math.log(r[i]), 0);
+    const build = th => {
+      const g = th[0], s = grp.map((_, i) => th[pidx[i]]);
+      const S = R.map((r, i) => r.map((_, j) => (i === j ? 1 : g * g + (grp[i] === grp[j] ? s[i] * s[j] : 0))));
+      return { g, s, S };
+    };
+    const F = th => {
+      const { g, s, S } = build(th);
+      if (s.some(v => g * g + v * v >= 0.999)) return 1e6;
+      const L = cholesky(S); if (!L) return 1e6;
+      const Si = inv(S); let tr = 0;
+      for (let i = 0; i < p; i++) for (let j = 0; j < p; j++) tr += R[i][j] * Si[j][i];
+      return 2 * L.reduce((t, r, i) => t + Math.log(r[i]), 0) + tr - logdetR - p;
+    };
+    let best = null;
+    const starts = [[0.5, 0.3], [0.6, 0.2], [0.4, 0.45], [0.7, 0.1], [0.3, 0.5]];
+    for (const [g0, s0] of starts) {
+      const x0 = [g0, ...new Array(k - 1).fill(s0)];
+      let r = nelderMead(F, x0); r = nelderMead(F, r.x, { scale: 0.02 });
+      if (!best || r.f < best.f) best = r;
+    }
+    let { g, s } = build(best.x);
+    if (g < 0) g = -g;
+    // orient each group factor so its loadings sum positive (sign is arbitrary)
+    members.forEach(m => { if (m.reduce((t, i) => t + s[i], 0) < 0) m.forEach(i => (s[i] = -s[i])); });
+    const wt = w || new Array(p).fill(1);
+    const Vt = R.reduce((t, r, i) => t + r.reduce((u, v, j) => u + v * wt[i] * wt[j], 0), 0);
+    const u2 = s.map(v => 1 - g * g - v * v);
+    const sumW = wt.reduce((a, b) => a + b, 0);
+    const omegaH = (g * sumW) ** 2 / Vt, omegaT = 1 - u2.reduce((t, v, i) => t + v * wt[i] * wt[i], 0) / Vt;
+    const Fv = Math.max(best.f, 0);
+    let fit = { test: false, df, F: Fv };
+    if (n && n > 0) {
+      const chisq = (n - 1 - (2 * p + 5) / 6 - 2 / 3) * Fv;
+      fit = { test: true, df, F: Fv, chisq, p: chisqSurvival(chisq, df), rmsea: Math.sqrt(Math.max(chisq - df, 0) / (df * (n - 1))), n };
+    }
+    const groupOmegaHS = members.map(m => { // group-factor share of its own items' total, general factor partialled out
+      const Vs = m.reduce((t, a) => t + m.reduce((u, b) => u + R[a][b] * wt[a] * wt[b], 0), 0);
+      return (m.reduce((t, i) => t + s[i] * wt[i], 0)) ** 2 / Vs;
+    });
+    return { g, s, u2, grp: grp.slice(), members, omegaH, omegaT, ECV: (p * g * g) / (p * g * g + s.reduce((t, v) => t + v * v, 0)), fit, groupOmegaHS, heywood: u2.some(v => v < 0.01) };
+  }
+  // Default grouping. Four items: the pairing that fits best (reliable in simulations).
+  // Five items: from the two-factor exploratory pattern (right only about two-thirds to three-quarters
+  // of the time in simulations, so the researcher should check it).
+  function defaultShortGrouping(R, n, w) {
+    const p = R.length;
+    if (p === 4) {
+      const opts = [[0, 0, 1, 1], [0, 1, 0, 1], [0, 1, 1, 0]];
+      let best = null;
+      for (const gr of opts) { const f = equalLoadingFit(R, gr, n, w); if (!best || f.fit.F < best.fit.F) best = f; }
+      return { grp: best.grp, source: 'best fit' };
+    }
+    const L = oblimin(paf(R, 2).L).L;
+    const d = L.map(r => Math.abs(r[0]) - Math.abs(r[1]));
+    const order = [...d.keys()].sort((a, b) => d[b] - d[a]);
+    const grp = new Array(p).fill(1); order.slice(0, 3).forEach(i => (grp[i] = 0));
+    return { grp, source: 'factor pattern' };
+  }
+
   // basis: 'covariance' (raw-score reliability, alpha from C) or 'correlation' (standardized items)
-  function fromMatrices(C, R, names, { nf = 3, n = null, level = 0.95, basis = 'covariance', mean = null, sd = null } = {}) {
+  function fromMatrices(C, R, names, { nf = 3, n = null, level = 0.95, basis = 'covariance', mean = null, sd = null, shortGroups = null } = {}) {
     if (names.length < 3) throw new Error('Select at least 3 items.');
     const useCov = basis === 'covariance' && C;
     const a = alphaFromMatrix(useCov ? C : R, R, names, n, level, mean, sd);
@@ -709,15 +834,31 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
       if (o.misfit) {
         const r2 = v => v.toFixed(2).replace(/^(-?)0\./, '$1.');
         o.warnings.push(`One factor does not fully account for the item correlations (${testTxt}largest residual correlation ${r2(top.resid)}, between ${top.a} and ${top.b}). Alpha and ω therefore overstate how much of the total score reflects a single general factor. ` +
-          (p < 6 ? 'With fewer than six items, a bifactor model cannot estimate by how much.' : 'Try 2 or more group factors to estimate ω_h.'));
+          (p === 4 || p === 5 ? 'See the short-scale estimate below for a conservative estimate of ω_h.' : p < 6 ? 'With three items, no bifactor model can estimate by how much.' : 'Try 2 or more group factors to estimate ω_h.'));
       }
+    }
+    // Short scales: when one factor fails, estimate omega-h from the equal-loading bifactor model.
+    if (o.misfit && (p === 4 || p === 5)) {
+      const w = useCov ? sd : null;
+      let grp, source;
+      if (shortGroups && shortGroups.length === p) {
+        const sizes = [0, 1].map(k => shortGroups.filter(g => g === k).length).sort();
+        const need = p === 4 ? [2, 2] : [2, 3];
+        if (sizes[0] !== need[0] || sizes[1] !== need[1]) throw new Error(p === 4 ? 'For four items, each group must have exactly two items.' : 'For five items, one group must have three items and the other two.');
+        grp = shortGroups.slice(); source = 'your grouping';
+      } else ({ grp, source } = defaultShortGrouping(R, n, w));
+      try {
+        const ss = equalLoadingFit(R, grp, n, w);
+        ss.source = source; ss.names = names.slice();
+        o.shortScale = ss;
+      } catch (e) { o.warnings.push('The short-scale estimate could not be computed: ' + e.message); }
     }
     if (o.fit.test && o.fit.heywood) o.warnings.push('The maximum-likelihood fit test reached a Heywood case (an item uniqueness near zero), so its χ² should be read with caution.');
     return { alpha: a, omega: o, R, basis: useCov ? 'covariance' : 'correlation' };
   }
-  function analyze(X, names, nf = 3, level = 0.95, basis = 'covariance') {
+  function analyze(X, names, nf = 3, level = 0.95, basis = 'covariance', shortGroups = null) {
     const { C, R, mean, sd } = covCor(X);
-    return fromMatrices(C, R, names, { nf, n: X.length, level, basis, mean, sd });
+    return fromMatrices(C, R, names, { nf, n: X.length, level, basis, mean, sd, shortGroups });
   }
 
   // Parse a square covariance/correlation matrix: full or lower/upper triangle,
@@ -750,21 +891,21 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
     return { M, names, k, looksCor };
   }
   // Analyze a subset of a parsed matrix. type: 'covariance' | 'correlation'. reverse: array of names.
-  function analyzeMatrix(pm, cols, { type = 'covariance', basis = 'covariance', nf = 3, n = null, level = 0.95, reverse = [] } = {}) {
+  function analyzeMatrix(pm, cols, { type = 'covariance', basis = 'covariance', nf = 3, n = null, level = 0.95, reverse = [], shortGroups = null } = {}) {
     const idx = cols.map(c => pm.names.indexOf(c));
     const sgn = cols.map(c => (reverse.includes(c) ? -1 : 1));
     const M = idx.map((a, i) => idx.map((b, j) => pm.M[a][b] * sgn[i] * sgn[j]));
     if (type === 'correlation') {
       if (M.some((r, i) => Math.abs(r[i] - 1) > 1e-4)) throw new Error('A correlation matrix needs 1s on the diagonal. Switch the input type to covariance matrix.');
       if (M.some(r => r.some(v => Math.abs(v) > 1 + 1e-9))) throw new Error('A correlation matrix cannot have entries beyond ±1.');
-      return fromMatrices(null, M, cols, { nf, n, level, basis: 'correlation' });
+      return fromMatrices(null, M, cols, { nf, n, level, basis: 'correlation', shortGroups });
     }
     const sd = M.map((r, i) => Math.sqrt(r[i]));
     const R = M.map((r, i) => r.map((v, j) => v / (sd[i] * sd[j])));
-    return fromMatrices(M, R, cols, { nf, n, level, basis, sd });
+    return fromMatrices(M, R, cols, { nf, n, level, basis, sd, shortGroups });
   }
 
-  const API = { analyze, analyzeMatrix, parseMatrix, fromMatrices, mapTest, parallelAnalysis, suggestFactors, mlFit, chisqSurvival, alphaAnalysis, alphaFromMatrix, omegaFromR, parseData, prepare, covCor, paf, oblimin, eigSym, fQuantile, inv, mul, T };
+  const API = { equalLoadingFit, defaultShortGrouping, analyze, analyzeMatrix, parseMatrix, fromMatrices, mapTest, parallelAnalysis, suggestFactors, mlFit, chisqSurvival, alphaAnalysis, alphaFromMatrix, omegaFromR, parseData, prepare, covCor, paf, oblimin, eigSym, fQuantile, inv, mul, T };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.Reliability = API;
 })(typeof self !== 'undefined' ? self : this);
 
@@ -841,7 +982,7 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
       reversed = new Set(example ? src.names.filter(h => /r$/.test(h)) : []);
       $('exampleTag').hidden = !example;
       renderItems(); $('itemsPanel').hidden = false;
-      nfTouched = false; suggest();
+      nfTouched = false; ssGrouping = null; suggest();
       return true;
     } catch (e) { st.className = 'status err'; st.textContent = e.message; return false; }
   }
@@ -900,13 +1041,15 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
     const mapN = m => (m === 0 ? 'no common factor' : `${m}`);
     const mapTxt = `MAP suggests ${mapN(s.map.mOrig)} (revised MAP: ${mapN(s.map.mRev)}), but MAP tends to suggest too few factors when a general factor is strong.`;
     let t;
+    const nSel = src ? src.names.filter(h => selected.has(h)).length : 0;
+    const mapPart = nSel < 6 ? '' : ' ' + mapTxt;
     if (s.pa) {
       t = `<b>Parallel analysis suggests ${s.raw} factor${s.raw === 1 ? '' : 's'}</b> (n = ${s.pa.n}).`;
       if (s.raw <= 1) t += ` That points to a unidimensional scale, so the tool fits one factor; the model check tests whether one factor accounts for the correlations.`;
       if (s.capped) t += s.cap === 1
         ? ' With fewer than six items, a usable bifactor model is not possible, so the tool fits one factor; the model check tests whether one factor accounts for the correlations.'
         : ` That is more than the ${s.cap} this many items can support (3 items per factor).`;
-      t += ' ' + mapTxt;
+      t += mapPart;
     } else {
       const nItems = src ? src.names.filter(h => selected.has(h)).length : 0;
       let why;
@@ -914,13 +1057,17 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
       else if (nItems < 6) why = 'Using one factor, because a usable bifactor model needs at least six items.';
       else if (s.nf >= 2) why = `Using 2 group factors until then, because one factor leaves a residual correlation of ${f2(s.oneFactorMaxResid)}.`;
       else why = 'Using one factor until then, because one factor leaves no residual correlation of .10 or more.';
-      t = `<b>Enter the sample size</b> to get a parallel-analysis suggestion and a fit test. ${why} ` + mapTxt;
+      t = `<b>Enter the sample size</b> to get a parallel-analysis suggestion and a fit test. ${why}` + mapPart;
     }
     const chosen = +$('nf').value;
     if (nfTouched && chosen !== s.nf) t += ` You chose ${chosen}.`;
     note.innerHTML = t;
     $('useSuggestion').hidden = !(nfTouched && chosen !== s.nf && s.pa);
   }
+
+  // researcher's grouping for the short-scale estimate; kept only while the same items are selected
+  let ssGrouping = null;
+  const groupingFor = cols => (ssGrouping && ssGrouping.cols.join('\u0001') === cols.join('\u0001') ? ssGrouping.grp : null);
 
   function run() {
     const st = $('runStatus'); st.className = 'status';
@@ -934,12 +1081,12 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
       if (src.kind === 'raw') {
         const rev = {}; revList.forEach(c => (rev[c] = true));
         const { X, dropped } = Reliability.prepare(src.parsed, cols, rev);
-        res = Reliability.analyze(X, cols, nf, level, basis);
+        res = Reliability.analyze(X, cols, nf, level, basis, groupingFor(cols));
         msg = `Computed on n = ${X.length}` + (dropped ? ` (${dropped} incomplete row${dropped > 1 ? 's' : ''} dropped).` : '.');
       } else {
         const nRaw = $('nInput').value.trim(), n = nRaw ? Math.round(+nRaw) : null;
         if (nRaw && !(n >= 2)) throw new Error('Sample size must be a whole number of at least 2, or left blank.');
-        res = Reliability.analyzeMatrix(src.pm, cols, { type: mode, basis, nf, n, level, reverse: revList });
+        res = Reliability.analyzeMatrix(src.pm, cols, { type: mode, basis, nf, n, level, reverse: revList, shortGroups: groupingFor(cols) });
         msg = `Computed from the ${mode} matrix` + (n ? ` (n = ${n}).` : '. Add n to get a confidence interval for alpha.');
       }
       res.cols = cols; res.reversed = revList; res.inputType = src.kind === 'raw' ? 'raw data' : `${mode} matrix`;
@@ -953,9 +1100,18 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
   function render(res) {
     const a = res.alpha, o = res.omega, pct = Math.round(a.level * 100), cov = res.basis === 'covariance';
     const basisTxt = cov ? 'raw-score basis' : 'standardized basis';
-    const stats = [
+    const ss = o.shortScale;
+    const ssBad = ss && ss.fit.test && ss.fit.p < .05;
+    const stats = ss ? [
+      [cov ? 'Coefficient α' : 'Coefficient α (standardized)', f2(a.alpha), (a.ci ? `${pct}% CI [${f2(a.ci[0])}, ${f2(a.ci[1])}] · ` : '') + 'overstates g (see warning)', true],
+      ['ω hierarchical', f2(ss.omegaH), ssBad ? 'equal-loading bifactor · model does not fit (see panel)' : `equal-loading bifactor · conservative · ${basisTxt}`, true],
+      ['ω total', f2(ss.omegaT), `equal-loading bifactor · ${basisTxt}`],
+      ['ωh / ωt', f2(ss.omegaH / ss.omegaT), 'share of reliable variance due to g'],
+      ['ECV', f2(ss.ECV), 'common variance explained by g'],
+      ['ω, one factor', f2(o.omegaH), 'overstated: one factor does not fit'],
+    ] : [
       [cov ? 'Coefficient α' : 'Coefficient α (standardized)', f2(a.alpha), a.ci ? `${pct}% CI [${f2(a.ci[0])}, ${f2(a.ci[1])}]` : 'CI needs sample size', true],
-      ['ω hierarchical', f2(o.omegaH), o.nf === 1 ? `single factor · ${basisTxt}` : `general factor only · ${basisTxt}`, true],
+      ['ω hierarchical', f2(o.omegaH), o.nf === 1 ? (o.misfit ? 'single factor · overstated (see warning)' : `single factor · ${basisTxt}`) : `general factor only · ${basisTxt}`, true],
       ['ω total', f2(o.omegaT), o.nf === 1 ? `factor + leftover covariation · ${basisTxt}` : `general + group factors · ${basisTxt}`],
       ['ωh / ωt', f2(o.omegaHOverT), o.nf === 1 ? 'near 1 when one factor fits' : 'share of reliable variance due to g'],
       ['ECV', f2(o.ECV), o.nf === 1 ? '1 by definition with one factor' : 'common variance explained by g'],
@@ -970,7 +1126,10 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
     if (res.reversed.length) warn.push(`Reverse-scored: ${res.reversed.map(esc).join(', ')}.`);
     $('warnings').innerHTML = warn.map(w => `<div>${w}</div>`).join('');
     renderModelCheck(res);
+    renderShortScale(res);
     $('groupPanel').hidden = o.nf === 1;
+    $('pathTitle').textContent = ss ? 'Bifactor path diagram (equal-loading model used for the short-scale estimate)' : o.nf === 1 ? 'Path diagram' : 'Bifactor path diagram';
+    $('itemTitle').textContent = o.nf === 1 ? 'Item statistics and one-factor loadings' : 'Item statistics and Schmid–Leiman loadings';
 
     const showMean = a.items.some(it => isFinite(it.mean)), showSD = a.items.some(it => isFinite(it.sd));
     const fk = [...Array(o.nf).keys()].map(j => `F${j + 1}`);
@@ -997,7 +1156,10 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
 
   // ---- bifactor path diagram (inline SVG built from the Schmid–Leiman solution) ----
   function drawPath(res) {
-    const o = res.omega, nf = o.nf, items = o.items, names = res.cols, p = items.length;
+    // when the short-scale estimate is reported, draw the equal-loading bifactor model it came from
+    const ssm = res.omega.shortScale;
+    const o = ssm ? { nf: 2, items: ssm.names.map((_, i) => ({ g: ssm.g, s: [ssm.grp[i] === 0 ? ssm.s[i] : 0, ssm.grp[i] === 1 ? ssm.s[i] : 0], h2: 1 - ssm.u2[i], u2: ssm.u2[i] })) } : res.omega;
+    const nf = o.nf, items = o.items, names = res.cols, p = items.length;
     const assign = nf > 1 ? items.map(it => it.s.reduce((b, v, j) => (Math.abs(v) > Math.abs(it.s[b]) ? j : b), 0)) : items.map(() => -1);
     const order = [...Array(p).keys()].sort((a, b) => assign[a] - assign[b] || a - b);
     const short = s => (s.length > 10 ? s.slice(0, 9) + '…' : s);
@@ -1060,7 +1222,8 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
       : 'With one factor, every item loads only on g, the factor all items share. Numbers are standardized loadings, line width shows their size, and u² is each item’s unique variance. The model check shows whether one factor accounts for the correlations.';
     if (crossSeen) cap += ' Dashed lines are cross-loadings of |.20| or more on a second group factor.';
     if (negSeen) cap += ' Red dashed lines are negative loadings.';
-    if (nf === 2) cap += ' With two group factors the g loadings rest on psych’s equal-loading convention (see the note above).';
+    if (ssm) cap = `Equal-loading bifactor model used for the short-scale estimate: every item has the same loading on g, and the items form group factor F1 (Group A) and F2 (Group B). Numbers are standardized loadings, and u² is each item’s unique variance.` + (ssm.members.some(m => m.length === 2) ? ' A two-item group factor has equal loadings, which is required for the model to be estimated.' : '');
+    else if (nf === 2) cap += ' With two group factors the g loadings rest on psych’s equal-loading convention (see the note above).';
     $('pathCap').textContent = cap;
   }
 
@@ -1084,6 +1247,59 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
     $('fitNote').innerHTML = o.nf === 1
       ? 'A residual is the part of a correlation that the single factor leaves unexplained. Residuals of .10 or more (red) mean some items share variance beyond the general factor, such as similarly worded pairs. When one factor does not fit, α and ω overstate how much the total score reflects a single factor.'
       : 'A residual is the part of a correlation the factors leave unexplained. Residuals of .10 or more (red) point to item pairs the model does not capture.';
+  }
+
+  // ---- short-scale estimate panel ----
+  function renderShortScale(res) {
+    const o = res.omega, ss = o.shortScale, panel = $('ssPanel');
+    if (!ss) { panel.hidden = true; return; }
+    panel.hidden = false;
+    const p = ss.names.length, five = p === 5, lab = k => (k === 0 ? 'A' : 'B');
+    const groupTxt = k => ss.members[k].map(i => esc(ss.names[i])).join(', ');
+    $('ssVal').innerHTML = 'ω<sub>h</sub> = ' + f2(ss.omegaH);
+    const bad = ss.fit.test && ss.fit.p < .05, negS = ss.s.some(v => v < -0.05);
+    $('ssSub').innerHTML = `${bad ? 'from a model that does not fit (see below)' : 'conservative estimate'} · ω<sub>t</sub> = ${f2(ss.omegaT)} · groups: A (${ss.members[0].map(i => esc(ss.names[i])).join(', ')}), B (${ss.members[1].map(i => esc(ss.names[i])).join(', ')})`;
+    $('ssWhy').innerHTML = `This panel appears because one factor does not account for the correlations among these ${p} items (see the warning above), so α and ω overstate the general factor. ` +
+      `With only ${p} items, the one bifactor model that can be estimated has <b>equal loadings on the general factor</b> for every item and two group factors: ` +
+      (five ? 'three items in one group and two in the other.' : 'two pairs of items.') +
+      ` The items are now grouped by <b>${ss.source === 'your grouping' ? 'your choice' : ss.source === 'best fit' ? 'best fit' : 'the factor pattern'}</b>.`;
+    const steps = five ? [
+      '<b>Check the grouping below now, before you use this estimate.</b> The starting grouping comes from the factor pattern, which picked the right grouping only about two-thirds to three-quarters of the time in simulations with five items. A wrong grouping can make the estimate too high.',
+      '<b>Group the items by theory, not by the numbers.</b> Put items together if they share something beyond the construct, such as similar wording, the same reverse keying, a shared stem, or the same subtopic. One group must have three items and the other two.',
+      '<b>If you change the grouping, press “Recompute with this grouping.”</b> The estimate, the diagram and the fit test below all update.',
+      '<b>Report the value as a conservative estimate</b> of ω<sub>h</sub> from a bifactor model with equal general-factor loadings, and list the grouping you used.'
+    ] : [
+      '<b>Check that the pairing below makes sense.</b> The tool chose the pairing that fits best, which found the right pairs in every simulated sample. Change it only if theory says the items pair differently, such as two similarly worded or reverse-keyed items; each group needs two items.',
+      '<b>If you change the pairing, press “Recompute with this grouping.”</b> The estimate, the diagram and the fit test below all update.',
+      '<b>Report the value as a conservative estimate</b> of ω<sub>h</sub> from a bifactor model with equal general-factor loadings, and list the pairing you used.'
+    ];
+    $('ssSteps').innerHTML = steps.map(t => `<li>${t}</li>`).join('');
+    $('ssGroups').innerHTML = ss.names.map((nm, i) => `<label class="ss-item" for="ssg${i}">${esc(nm)} <select id="ssg${i}" data-i="${i}"><option value="0"${ss.grp[i] === 0 ? ' selected' : ''}>Group A</option><option value="1"${ss.grp[i] === 1 ? ' selected' : ''}>Group B</option></select></label>`).join('');
+    const check = () => {
+      const g = ss.names.map((_, i) => +$('ssg' + i).value), nA = g.filter(v => v === 0).length, nB = p - nA;
+      const ok = five ? ((nA === 3 && nB === 2) || (nA === 2 && nB === 3)) : nA === 2;
+      const changed = g.some((v, i) => v !== ss.grp[i]);
+      $('ssRecompute').disabled = !ok || !changed;
+      $('ssStatus').className = 'status' + (ok ? '' : ' err');
+      $('ssStatus').textContent = `Group A: ${nA} item${nA === 1 ? '' : 's'} · Group B: ${nB} item${nB === 1 ? '' : 's'}. ` +
+        (!ok ? (five ? 'One group needs three items and the other two.' : 'Each group needs two items.') : changed ? 'Press Recompute to use this grouping.' : 'This is the grouping in use.');
+      return g;
+    };
+    ss.names.forEach((_, i) => ($('ssg' + i).onchange = check));
+    $('ssRecompute').onclick = () => { ssGrouping = { cols: res.cols.slice(), grp: check() }; run(); };
+    check();
+    $('ssCaveat').innerHTML = `<b>Why this estimate is conservative, and when it is most off.</b> This ω<sub>h</sub> comes from a bifactor model with equal general-factor loadings, the only bifactor model that can be estimated with this few items. It tends to be conservative (too low). The bias is largest when the items’ general-factor loadings differ a lot, and especially when the items with the strongest general loadings all belong to the same group factor; the fit test cannot detect that case.` +
+      (five ? ' The estimate is conservative only if items are assigned to the right group factors; a wrong assignment can make it too high.' : '');
+    const gl = `General-factor loading (equal for all items) = ${f2(ss.g)}.`;
+    const sl = [0, 1].map(k => `Group ${lab(k)}: ` + (ss.members[k].length === 2 ? `${groupTxt(k)} (equal loadings) = ${f2(ss.s[ss.members[k][0]])}` : ss.members[k].map(i => `${esc(ss.names[i])} ${f2(ss.s[i])}`).join(', '))).join('; ');
+    let fitTxt;
+    if (ss.fit.test) {
+      const pv = ss.fit.p < .001 ? 'p < .001' : `p = ${ss.fit.p.toFixed(3).replace(/^0/, '')}`;
+      fitTxt = `Fit of the equal-loading model: χ²(${ss.fit.df}) = ${ss.fit.chisq.toFixed(2)}, ${pv}, RMSEA = ${f2(ss.fit.rmsea)}.` +
+        (ss.fit.p < .05 ? ' This model does not fit either. That usually means the general-factor loadings are quite unequal, which makes the estimate too low' + (five ? ', or that the grouping is wrong, which can make it too high' : '') + '.' : ' A good fit does not rule out the undetectable case described above.');
+    } else fitTxt = 'Enter the sample size to test the fit of the equal-loading model.';
+    $('ssDetail').innerHTML = `${gl} Group-factor loadings: ${sl}. ${fitTxt}` +
+      (negS ? ' Some group-factor loadings are negative, which usually means those items do not belong together; check the grouping.' : '') + (ss.heywood ? ' An item’s unique variance is near zero (a Heywood case), so treat this estimate with extra caution.' : '');
   }
 
   function renderCounts(s) {
@@ -1111,7 +1327,11 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
       ['alpha', x3(a.alpha)], [`alpha ${Math.round(a.level * 100)}% CI`, a.ci ? `${x3(a.ci[0])} to ${x3(a.ci[1])}` : ''],
       ['standardized alpha', x3(a.stdAlpha)], ['omega hierarchical', x3(o.omegaH)], ['omega total', x3(o.omegaT)], ['ECV', x3(o.ECV)],
       ['fit test', o.fit && o.fit.test ? `chi-square(${o.fit.df}) = ${o.fit.chisq.toFixed(2)}, p = ${o.fit.p.toFixed(4)}, RMSEA = ${o.fit.rmsea.toFixed(3)}` : 'not available'],
-      ['RMSR', x3(o.rmsr)], [],
+      ['RMSR', x3(o.rmsr)],
+      ...(o.shortScale ? [['short-scale omega hierarchical (equal-loading bifactor, conservative)', x3(o.shortScale.omegaH)], ['short-scale omega total', x3(o.shortScale.omegaT)],
+        ['short-scale grouping', [0, 1].map(k => (k ? 'B: ' : 'A: ') + o.shortScale.members[k].map(i => o.shortScale.names[i]).join(' ')).join('; ')],
+        ['short-scale model fit', o.shortScale.fit.test ? `chi-square(${o.shortScale.fit.df}) = ${o.shortScale.fit.chisq.toFixed(2)}, p = ${o.shortScale.fit.p.toFixed(4)}, RMSEA = ${o.shortScale.fit.rmsea.toFixed(3)}` : 'not available']] : []),
+      [],
       ['item', 'mean', 'sd', 'r.drop', 'alpha if deleted', 'g', ...(o.nf > 1 ? fk : []), 'h2', 'u2'],
       ...a.items.map((it, i) => [it.name, x3(it.mean), x3(it.sd), x3(it.rDrop), x3(it.alphaIfDeleted), x3(o.items[i].g), ...(o.nf > 1 ? o.items[i].s.map(x3) : []), x3(o.items[i].h2), x3(o.items[i].u2)])
     ];
