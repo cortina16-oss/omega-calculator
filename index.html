@@ -112,6 +112,14 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
 .about a { color: var(--accent); }
 .summary-list { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
 .about .ref { font-size: 13px; color: var(--muted); padding-left: 2em; text-indent: -2em; overflow-wrap: anywhere; }
+.why-btn { display: inline-flex; align-items: center; gap: 5px; font: 600 12px var(--f-body); padding: 1px 8px 1px 3px; border-radius: 999px; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); cursor: pointer; vertical-align: 1px; }
+.why-btn:hover { background: var(--surface); }
+.why-i { display: inline-grid; place-items: center; width: 15px; height: 15px; border-radius: 50%; background: var(--accent); color: var(--surface); font: italic 700 11px Georgia, serif; }
+.why-box { border: 1px solid var(--line); border-left: 3px solid var(--accent); background: var(--surface); border-radius: 0 8px 8px 0; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; color: var(--ink); max-width: 80ch; }
+.why-box h3 { margin: 0; font: 600 15px var(--f-body); }
+.why-box p { margin: 0; }
+.why-box table { width: auto; }
+.why-box .why-close { align-self: flex-start; }
 .cite-box { margin-top: 12px; padding: 10px 14px; font-size: 14px; line-height: 1.55; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; max-width: 80ch; overflow-wrap: anywhere; }
 .cite-box-ref { display: block; margin-top: 4px; color: var(--ink); }
 </style>
@@ -144,7 +152,7 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
     <h2 class="tool-title">Omega &amp; Alpha Calculator</h2>
     <p>Enter item-level survey data, or a covariance or correlation matrix, to get coefficient alpha and omega-hierarchical from a Schmid–Leiman hierarchical factor solution. Everything runs in your browser; your data never leave this page.</p>
     <p style="margin-top:10px">Omega-h requires that the number of group factors be specified. You can specify a number of group factors or the tool will do it automatically using parallel analysis.</p>
-    <p style="margin-top:10px">Most scales today have six or fewer items. A usable hierarchical factor model needs at least six items, two group factors of three items each, and even then the general factor is identified only by constraining its loadings to be equal; with nine or more items (three group factors of three), no constraint is needed. <b>For shorter scales</b>, the tool fits a single factor and checks the residual correlations. If one factor accounts for the correlations, ω is the reliability of the general factor. If it doesn't, α and ω overstate it; for four- or five-item scales, the tool then also gives a conservative estimate of ω<sub>h</sub> from a hierarchical factor model with equal general-factor loadings, and a panel in the results explains what you need to check before using it.</p>
+    <p style="margin-top:10px">Most scales today have six or fewer items. A usable hierarchical factor model needs at least six items, two group factors of three items each, and even then the general factor is identified only by constraining its loadings to be equal <button type="button" class="why-btn" aria-expanded="false" title="Why must the general-factor loadings be equal?"><span class="why-i" aria-hidden="true">i</span>Why?</button>; with nine or more items (three group factors of three), no constraint is needed. <b>For shorter scales</b>, the tool fits a single factor and checks the residual correlations. If one factor accounts for the correlations, ω is the reliability of the general factor. If it doesn't, α and ω overstate it; for four- or five-item scales, the tool then also gives a conservative estimate of ω<sub>h</sub> from a hierarchical factor model with equal general-factor loadings, and a panel in the results explains what you need to check before using it.</p>
     <div class="cite-box">If you publish results produced with this tool or use it in teaching, please cite it as: <span class="cite-box-ref">Cortina, J. M. (2026). <i>Omega &amp; Alpha Calculator</i> (Version 1.0) [Web application]. https://josecortina.com/omega-alpha-calculator</span></div>
   </header>
 
@@ -1306,6 +1314,33 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
       : 'A residual is the part of a correlation the factors leave unexplained. Residuals of .10 or more (red) point to item pairs the model does not capture.';
   }
 
+  // ---- "Why?" explanation: why the general-factor loadings must be equal with two group factors ----
+  const WHY_BTN = '<button type="button" class="why-btn" aria-expanded="false" title="Why must the general-factor loadings be equal?"><span class="why-i" aria-hidden="true">i</span>Why?</button>';
+  const WHY_HTML = `<h3>Why the general-factor loadings must be equal</h3>
+    <p>With only two group factors, counting parameters is not enough. Take five items, three in one group and two in the other, with the general-factor loadings left free. The model has 14 parameters (5 general loadings, 3 + 1 group loadings, 5 error variances) for 15 variances and covariances, so it seems to have one degree of freedom. Yet it is not identified: different sets of loadings reproduce the data exactly.</p>
+    <p>The reason is that the general factor shows up in the covariances <i>between</i> the two groups only as products of a loading from one group and a loading from the other. Multiply one group’s general-factor loadings by any constant c and divide the other group’s by c, and every between-group covariance stays the same; each group’s own group-factor loadings absorb the difference within that group. So the data cannot say how much of each group’s shared variance belongs to the general factor and how much to its group factor. The one degree of freedom does not help, because the restriction it tests holds for all of these solutions alike.</p>
+    <p>Each row below reproduces the same correlation matrix exactly, yet gives a different ω<sub>h</sub>:</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th><span class="sym">c</span></th><th>General loadings (group 1 | group 2)</th><th>Group loadings (group 1 | group 2)</th><th><span class="sym">ω<sub>h</sub></span></th></tr></thead>
+      <tbody>
+        <tr><td>0.90</td><td>.54 .50 .45 | .72 .67</td><td>.48 .42 .37 | .33 .33</td><td>.643</td></tr>
+        <tr><td>1.00</td><td>.60 .55 .50 | .65 .60</td><td>.40 .35 .30 | .45 .45</td><td>.654</td></tr>
+        <tr><td>1.05</td><td>.63 .58 .53 | .62 .57</td><td>.35 .30 .25 | .49 .49</td><td>.665</td></tr>
+        <tr><td>1.10</td><td>.66 .61 .55 | .59 .55</td><td>.29 .24 .20 | .52 .52</td><td>.678</td></tr>
+      </tbody></table></div>
+    <p>Requiring all general-factor loadings to be equal removes this freedom, because scaling one group up and the other down would make them unequal; only one solution remains. The same problem arises in the Schmid–Leiman solution with two group factors, which is why the tool, like <code>psych::omega</code>, makes the two group factors load equally on the general factor.</p>
+    <p>With three or more group factors the constraint is unnecessary: the covariances between each pair of groups pin down each group’s general-factor loadings separately, so nothing is left to trade. That is why a scale needs at least nine items, three groups of three, to be estimated without the constraint.</p>
+    <button type="button" class="why-close">Close</button>`;
+  function toggleWhy(btn) {
+    const host = btn.closest('p');
+    const open = host.nextElementSibling && host.nextElementSibling.classList.contains('why-box');
+    if (open) { host.nextElementSibling.remove(); btn.setAttribute('aria-expanded', 'false'); return; }
+    const box = document.createElement('div'); box.className = 'why-box'; box.innerHTML = WHY_HTML;
+    host.after(box); btn.setAttribute('aria-expanded', 'true');
+    box.querySelector('.why-close').onclick = () => { box.remove(); btn.setAttribute('aria-expanded', 'false'); btn.focus(); };
+  }
+  document.addEventListener('click', e => { const b = e.target.closest('.why-btn'); if (b) toggleWhy(b); });
+
   // ---- short-scale estimate panel ----
   function renderShortScale(res) {
     const o = res.omega, ss = o.shortScale, panel = $('ssPanel');
@@ -1319,7 +1354,7 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
     $('ssWhy').innerHTML = `This panel appears because one factor does not account for the correlations among these ${p} items (see the warning above), so α and ω overstate the general factor. ` +
       `With only ${p} items, the one hierarchical factor model that can be estimated has <b>equal loadings on the general factor</b> for every item and two group factors: ` +
       (five ? 'three items in one group and two in the other.' : 'two pairs of items.') +
-      ` The items are now grouped by <b>${ss.source === 'your grouping' ? 'your choice' : ss.source === 'best fit' ? 'best fit' : 'the factor pattern'}</b>.`;
+      ` ${WHY_BTN} The items are now grouped by <b>${ss.source === 'your grouping' ? 'your choice' : ss.source === 'best fit' ? 'best fit' : 'the factor pattern'}</b>.`;
     $('ssDim').innerHTML = `<b>One dimension or two?</b> The true scores of the two groups correlate <b>${f2(ss.groupCorr)}</b> (from the equal-loading model, assuming the grouping below is right). If you consider the groups distinct dimensions, score and report them separately rather than as one total. If you consider them closely related elements of a single construct, the total score and this ω<sub>h</sub> apply.`;
     const steps = five ? [
       '<b>Check the grouping below now, before you use this estimate.</b> The starting grouping comes from the factor pattern, which picked the right grouping only about two-thirds to three-quarters of the time in simulations with five items. A wrong grouping can make the estimate too high.',
