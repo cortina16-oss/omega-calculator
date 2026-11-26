@@ -120,6 +120,8 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
 .why-box p { margin: 0; }
 .why-box table { width: auto; }
 .why-box .why-close { align-self: flex-start; }
+.section-intro { margin: 0; max-width: 76ch; font-size: 15px; display: flex; flex-direction: column; gap: 8px; }
+.section-intro p { margin: 0; }
 .cite-box { margin-top: 12px; padding: 10px 14px; font-size: 14px; line-height: 1.55; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; max-width: 80ch; overflow-wrap: anywhere; }
 .cite-box-ref { display: block; margin-top: 4px; color: var(--ink); }
 </style>
@@ -156,6 +158,11 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
     <div class="cite-box">If you publish results produced with this tool or use it in teaching, please cite it as: <span class="cite-box-ref">Cortina, J. M. (2026). <i>Omega &amp; Alpha Calculator</i> (Version 1.0) [Web application]. https://josecortina.com/omega-alpha-calculator</span></div>
   </header>
 
+  <div class="section-intro">
+    <p><b>Using the calculator.</b> Start by choosing how you will enter your data. <b>Raw data</b> (one row per respondent, one column per item) give the fullest output, including item means and standard deviations. A <b>covariance</b> or <b>correlation matrix</b> works when you have only summary data, such as correlations from a published article; a correlation matrix gives results for standardized items.</p>
+    <p>Upload a file or paste the data, tick the items that make up the scale in the Items section, and press “Compute.” If you enter a matrix, also enter the sample size: the tool needs it to choose the number of group factors with parallel analysis, to test model fit and to give a confidence interval for alpha. To see how everything works first, press “Load example” or, with a correlation matrix selected, “Load 5-item example.”</p>
+  </div>
+
   <section class="panel" aria-labelledby="h-data">
     <div class="row" style="justify-content:space-between">
       <h2 id="h-data">Data</h2>
@@ -167,7 +174,7 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
       <button type="button" role="radio" data-mode="correlation" aria-checked="false">Correlation matrix</button>
     </div>
     <p class="note" style="margin:0" data-for="raw">One row per respondent, one column per item, header row with item names. Excel (.xlsx, .xls, .ods), CSV, TSV or semicolon-separated. Blank, <code>NA</code>, <code>.</code>, <code>-99</code> and <code>-999</code> count as missing; incomplete rows are dropped (listwise).</p>
-    <p class="note" style="margin:0" data-for="matrix" hidden>A square matrix, full or lower triangle including the diagonal, from an Excel sheet or separated by commas, tabs, semicolons or spaces. Item names can go in a header row or as row labels. Sample size is optional and only needed for the alpha confidence interval.</p>
+    <p class="note" style="margin:0" data-for="matrix" hidden>A square matrix, full or lower triangle including the diagonal, from an Excel sheet or separated by commas, tabs, semicolons or spaces. Item names can go in a header row or as row labels. Sample size is optional, but without it the tool cannot run parallel analysis, test model fit or give a confidence interval for alpha.</p>
     <p class="note" id="ex12Note" style="margin:0;color:var(--ink)" hidden><b>About the example.</b> Suppose we were treating these 12 items as if they measured a single thing. In fact they measure three related but distinct dimensions, worry, tension and sleep, with four items each (worry4r and sleep3r are reverse-keyed and already marked R). Alpha for the 12 items is <span id="ex12Alpha"></span>, which clears the (misguided) conventional .70 benchmark, yet ω<sub>h</sub> is only <span id="ex12Omega"></span>: about <span id="ex12Pct"></span>% of the total-score variance comes from the general factor that runs through all 12 items. Alpha counts all of the variance the items have in common, whether it comes from the general factor or from a dimension that only some items share, so it estimates something closer to ω<sub>t</sub> (<span id="ex12OmegaT"></span> here) than to ω<sub>h</sub>. That is why alpha can be quite high even for a multidimensional scale. ω<sub>h</sub> counts only the general factor.</p>
     <p class="note" id="ex5Note" style="margin:0;color:var(--ink)" hidden><b>About the 5-item example.</b> It uses five of the twelve example items, worry1–worry3 and tense1–tense2, from two of the example’s three dimensions. One factor does not fit them, so the results include a short-scale estimate of ω<sub>h</sub> (.54), well below α (.71), and the correlation between the two groups’ true scores (about .56). To see how the grouping matters, move an item to the other group in the short-scale panel and press Recompute.</p>
     <div class="row">
