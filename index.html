@@ -28,6 +28,7 @@ body { background: var(--bg); color: var(--ink); font-family: var(--f-body); fon
 header h1 { font-family: var(--f-display); font-weight: 600; font-size: clamp(28px, 4vw, 38px); line-height: 1.1; margin: 0 0 8px; text-wrap: balance; }
 header p { margin: 0; color: var(--muted); max-width: 68ch; }
 h2 { font-family: var(--f-display); font-weight: 600; font-size: 22px; margin: 0; }
+.sym { text-transform: none; letter-spacing: 0; }
 .eyebrow { font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
@@ -169,7 +170,7 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
     <div class="warnings" id="warnings"></div>
 
     <div class="panel ss-panel" id="ssPanel" hidden>
-      <span class="eyebrow">Short-scale estimate of ω<sub>h</sub></span>
+      <span class="eyebrow">Short-scale estimate of <span class="sym">ω<sub>h</sub></span></span>
       <div class="ss-head"><span class="ss-val" id="ssVal"></span><span class="ss-sub" id="ssSub"></span></div>
       <p class="note" id="ssWhy" style="margin:0;color:var(--ink)"></p>
       <h3>What you need to do</h3>
@@ -1118,7 +1119,7 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
       cov ? ['Standardized α', f2(a.stdAlpha), `mean inter-item r = ${f2(a.meanR)}`] : ['Mean inter-item r', f2(a.meanR), `${a.k} items`],
       ['Sample', a.n ? `${a.n}` : '—', `${a.k} items · ${o.nf === 1 ? 'one factor' : `${o.nf} group factors`} · ${res.inputType}`],
     ];
-    $('summary').innerHTML = stats.map(([l, v, s, key]) => `<div class="stat${key ? ' key' : ''}"><span class="eyebrow">${l}</span><span class="v">${v}</span><span class="sub">${s}</span></div>`).join('');
+    $('summary').innerHTML = stats.map(([l, v, s, key]) => `<div class="stat${key ? ' key' : ''}"><span class="eyebrow">${l.replace(/ω[ht]?|α/g, m => `<span class="sym">${m.length > 1 ? m[0] + '<sub>' + m[1] + '</sub>' : m}</span>`)}</span><span class="v">${v}</span><span class="sub">${s}</span></div>`).join('');
 
     const warn = [...o.warnings];
     const negIt = a.items.filter((it, i) => it.rDrop < 0 || o.items[i].g < 0).map(it => it.name);
@@ -1135,11 +1136,11 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
     const fk = [...Array(o.nf).keys()].map(j => `F${j + 1}`);
     const cellL = v => `<td class="${Math.abs(v) >= 0.2 ? 'strong' : 'faint'}">${f2(v)}</td>`;
     const pre = (showMean ? 1 : 0) + (showSD ? 1 : 0) + 2;
-    $('itemTable').innerHTML = `<thead><tr><th>Item</th>${showMean ? '<th>Mean</th>' : ''}${showSD ? '<th>SD</th>' : ''}<th>r.drop</th><th>α if deleted</th><th>g</th>${o.nf > 1 ? fk.map(f => `<th>${f}</th>`).join('') : ''}<th>h²</th><th>u²</th></tr></thead><tbody>` +
+    $('itemTable').innerHTML = `<thead><tr><th>Item</th>${showMean ? '<th>Mean</th>' : ''}${showSD ? '<th>SD</th>' : ''}<th>r.drop</th><th><span class="sym">α</span> if deleted</th><th><span class="sym">g</span></th>${o.nf > 1 ? fk.map(f => `<th>${f}</th>`).join('') : ''}<th><span class="sym">h²</span></th><th><span class="sym">u²</span></th></tr></thead><tbody>` +
       a.items.map((it, i) => { const oi = o.items[i]; return `<tr><td>${esc(it.name)}${res.reversed.includes(it.name) ? ' <span class="faint">(R)</span>' : ''}</td>${showMean ? `<td>${f2(it.mean)}</td>` : ''}${showSD ? `<td>${f2(it.sd)}</td>` : ''}<td class="${it.rDrop < 0 ? 'flag' : ''}">${f2(it.rDrop)}</td><td>${f3(it.alphaIfDeleted)}</td>${oi.g < 0 ? `<td class="flag">${f2(oi.g)}</td>` : cellL(oi.g)}${o.nf > 1 ? oi.s.map(cellL).join('') : ''}<td>${f2(oi.h2)}</td><td>${f2(oi.u2)}</td></tr>`; }).join('') +
       `</tbody><tfoot><tr><td>Σ loadings²</td>${'<td></td>'.repeat(pre)}<td>${f2(o.items.reduce((s, x) => s + x.g * x.g, 0))}</td>${o.nf > 1 ? fk.map((_, j) => `<td>${f2(o.items.reduce((s, x) => s + x.s[j] ** 2, 0))}</td>`).join('') : ''}<td></td><td></td></tr></tfoot>`;
 
-    $('groupTable').innerHTML = `<thead><tr><th>Factor</th><th>Items</th><th>g loading of factor</th><th>ω</th><th>ω<sub>hs</sub></th></tr></thead><tbody>` +
+    $('groupTable').innerHTML = `<thead><tr><th>Factor</th><th>Items</th><th><span class="sym">g</span> loading of factor</th><th><span class="sym">ω</span></th><th><span class="sym">ω<sub>hs</sub></span></th></tr></thead><tbody>` +
       o.groups.map((g, j) => `<tr><td>F${g.factor}</td><td style="text-align:left;white-space:normal;min-width:180px">${g.items.map(esc).join(', ') || '<span class="faint">no items</span>'}</td><td>${f2(o.firstOrder.gLoadings[j])}</td><td>${f2(g.omega)}</td><td>${f2(g.omegaHS)}</td></tr>`).join('') + '</tbody>';
 
     const L = o.firstOrder.loadings;
@@ -1314,7 +1315,7 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
         }).join('') + `</tbody><tfoot><tr><td>Retained</td><td class="strong">${fa ? fa.m : '—'}</td><td></td><td>${pc.m}</td><td></td></tr></tfoot>`;
     } else $('paTable').innerHTML = '';
     const mn = a => a.reduce((b, v, i) => (v < a[b] ? i : b), 0), io = mn(s.map.orig), ir = mn(s.map.rev);
-    $('mapTable').innerHTML = `<thead><tr><th>Velicer's MAP · components removed</th><th>Avg. r² (1976)</th><th>Avg. r⁴ (2000)</th></tr></thead><tbody>` +
+    $('mapTable').innerHTML = `<thead><tr><th>Velicer's MAP · components removed</th><th>Avg. <span class="sym">r²</span> (1976)</th><th>Avg. <span class="sym">r⁴</span> (2000)</th></tr></thead><tbody>` +
       [...Array(rows).keys()].map(m => `<tr><td>${m}</td><td class="${m === io ? 'strong' : 'faint'}">${s.map.orig[m].toFixed(4)}</td><td class="${m === ir ? 'strong' : 'faint'}">${s.map.rev[m].toFixed(5)}</td></tr>`).join('') + '</tbody>';
     $('countNote').innerHTML = (s.pa ? `Parallel analysis used ${s.pa.reps} random data sets of the same size (n = ${s.pa.n}); the preselection uses the factor version. ` : 'Parallel analysis needs the sample size. ') +
       'MAP picks the row with the smallest average partial correlation (bold). It is shown for reference only.';
