@@ -130,10 +130,12 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
     </div>
     <p class="note" style="margin:0" data-for="raw">One row per respondent, one column per item, header row with item names. Excel (.xlsx, .xls, .ods), CSV, TSV or semicolon-separated. Blank, <code>NA</code>, <code>.</code>, <code>-99</code> and <code>-999</code> count as missing; incomplete rows are dropped (listwise).</p>
     <p class="note" style="margin:0" data-for="matrix" hidden>A square matrix, full or lower triangle including the diagonal, from an Excel sheet or separated by commas, tabs, semicolons or spaces. Item names can go in a header row or as row labels. Sample size is optional and only needed for the alpha confidence interval.</p>
+    <p class="note" id="ex5Note" style="margin:0;color:var(--ink)" hidden><b>About the 5-item example.</b> It uses five of the twelve example items, worry1–worry3 and tense1–tense2, which come from two different facets (worry and tension). One factor does not fit five items like these, so the results include a short-scale estimate of ω<sub>h</sub>. To see how the grouping matters, move an item to the other group in that panel and press Recompute.</p>
     <div class="row">
       <label class="filebtn">Upload file<input id="file" type="file" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls,.ods,text/csv,text/plain"></label>
       <label class="opt" for="sheetSel" id="sheetWrap" hidden>Sheet <select id="sheetSel"></select></label>
       <button id="loadExample" type="button">Load example</button>
+      <button id="loadExample5" type="button" hidden>Load 5-item example</button>
       <button id="clear" type="button">Clear</button>
       <label class="opt" for="nInput" data-for="matrix" hidden>Sample size (n) <input id="nInput" type="number" min="2" step="1" placeholder="optional" style="width:110px"></label>
     </div>
@@ -958,6 +960,7 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
       : 'Tick the items that make up the scale. Press <b>R</b> to reverse-score an item (flips the sign of its row and column in the matrix).';
     $('paste').placeholder = m === 'raw' ? 'item1,item2,item3,…\n4,5,3,…' : 'item1,item2,item3,…\n1\n.42,1\n.38,.51,1';
     $('readData').textContent = m === 'raw' ? 'Read pasted data' : 'Read pasted matrix';
+    $('loadExample5').hidden = m !== 'correlation';
     $('results').hidden = true;
     if (isExample) loadExample();
     else { src = null; $('itemsPanel').hidden = true; $('dataStatus').textContent = ''; $('paste').value = ''; }
@@ -980,6 +983,7 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
         st.textContent = `${pm.k} × ${pm.k} matrix read.` + (mode === 'covariance' && pm.looksCor ? ' Its diagonal is all 1s, so covariance and correlation results will match.' : '');
       }
       isExample = example;
+      if (!example) $('ex5Note').hidden = true;
       reversed = new Set(example ? src.names.filter(h => /r$/.test(h)) : []);
       $('exampleTag').hidden = !example;
       renderItems(); $('itemsPanel').hidden = false;
@@ -990,7 +994,16 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
   function loadExample() {
     const ex = exampleFor(mode);
     $('paste').value = ex.text; $('nInput').value = ex.n || '';
+    $('ex5Note').hidden = true; $('exampleTag').textContent = 'Example data loaded';
     if (load(ex.text, true)) run();
+  }
+  // five items from two facets of the example (worry1-3, tense1-2), as a correlation matrix
+  function loadExample5() {
+    const p = Reliability.parseData(makeExample()), { X } = Reliability.prepare(p, p.header), { R } = Reliability.covCor(X);
+    const keep = ['worry1', 'worry2', 'worry3', 'tense1', 'tense2'], idx = keep.map(k => p.header.indexOf(k));
+    const text = keep.join('\t') + '\n' + idx.map((a, i) => idx.slice(0, i + 1).map(b => R[a][b].toFixed(3)).join('\t')).join('\n');
+    $('paste').value = text; $('nInput').value = X.length;
+    if (load(text, true)) { $('exampleTag').textContent = '5-item example loaded'; $('ex5Note').hidden = false; run(); }
   }
 
   function renderItems() {
@@ -1125,7 +1138,7 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
     const negIt = a.items.filter((it, i) => it.rDrop < 0 || o.items[i].g < 0).map(it => it.name);
     if (negIt.length) warn.push(`Negative item–total correlation or g loading: ${negIt.map(esc).join(', ')}. Check whether these need reverse scoring.`);
     if (res.reversed.length) warn.push(`Reverse-scored: ${res.reversed.map(esc).join(', ')}.`);
-    $('warnings').innerHTML = warn.map(w => `<div>${w}</div>`).join('');
+    $('warnings').innerHTML = warn.map(w => `<div>${w.replace(/ω_(hs|h|t)/g, 'ω<sub>$1</sub>')}</div>`).join('');
     renderModelCheck(res);
     renderShortScale(res);
     $('groupPanel').hidden = o.nf === 1;
@@ -1376,7 +1389,8 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
   };
   $('readData').onclick = () => { if (load($('paste').value, false)) $('results').hidden = true; };
   $('loadExample').onclick = loadExample;
-  $('clear').onclick = () => { $('sheetWrap').hidden = true; workbook = null; $('paste').value = ''; $('nInput').value = ''; src = null; isExample = false; $('itemsPanel').hidden = true; $('results').hidden = true; $('exampleTag').hidden = true; $('dataStatus').textContent = ''; };
+  $('loadExample5').onclick = loadExample5;
+  $('clear').onclick = () => { $('ex5Note').hidden = true; $('sheetWrap').hidden = true; workbook = null; $('paste').value = ''; $('nInput').value = ''; src = null; isExample = false; $('itemsPanel').hidden = true; $('results').hidden = true; $('exampleTag').hidden = true; $('dataStatus').textContent = ''; };
   $('selAll').onclick = () => { selected = new Set(src.names); renderItems(); scheduleSuggest(); };
   $('selNone').onclick = () => { selected.clear(); renderItems(); scheduleSuggest(); };
   $('nf').onchange = () => { nfTouched = true; describeSuggestion(); };
