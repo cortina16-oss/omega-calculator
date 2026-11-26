@@ -110,6 +110,7 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
 .about p { margin: 0; }
 .about .formula { font: 500 16px var(--f-display); padding: 4px 0 4px 16px; border-left: 2px solid var(--line); font-variant-numeric: tabular-nums; }
 .about a { color: var(--accent); }
+.summary-list { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
 .about .ref { font-size: 13px; color: var(--muted); padding-left: 2em; text-indent: -2em; overflow-wrap: anywhere; }
 .cite-box { margin-top: 12px; padding: 10px 14px; font-size: 14px; line-height: 1.55; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; max-width: 80ch; overflow-wrap: anywhere; }
 .cite-box-ref { display: block; margin-top: 4px; color: var(--ink); }
@@ -126,6 +127,17 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
     <p class="formula">ω<sub>h</sub> = (Σ λ<sub>g</sub>)² / σ²<sub>total</sub></p>
     <p>Note that this is the square of the sum, not the sum of squared loadings; the latter is used for the explained common variance (ECV), not ω<sub>h</sub>.</p>
     <p>Adding the square of the sum of each group factor’s loadings to the numerator gives ω<sub>t</sub>, the reliability of the total score as a whole. Alpha cannot separate these sources; it counts general and group variance alike. Cortina et al. (2020) recommend that ω<sub>h</sub> be used instead of alpha.</p>
+  </section>
+
+  <section class="about" aria-labelledby="h-does">
+    <h2 id="h-does">What the calculator does</h2>
+    <ul class="summary-list">
+      <li>Takes item-level data (Excel or CSV) or a covariance or correlation matrix.</li>
+      <li>Computes coefficient alpha, with a confidence interval, and ω<sub>h</sub> and ω<sub>t</sub> from a hierarchical factor model, along with item statistics.</li>
+      <li>Chooses the number of group factors with parallel analysis, or uses the number you specify.</li>
+      <li>Checks whether the model accounts for the item correlations. For scales with fewer than six items, it fits a single factor; for four- or five-item scales that one factor does not fit, it also gives a conservative estimate of ω<sub>h</sub>.</li>
+      <li>Draws a path diagram of the model and lets you copy the results as a table.</li>
+    </ul>
   </section>
 
   <header>
