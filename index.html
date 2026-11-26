@@ -122,7 +122,7 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
   <section class="about" aria-labelledby="h-about">
     <h2 id="h-about">What is omega-hierarchical (ω<sub>h</sub>)?</h2>
     <p>Omega-hierarchical (ω<sub>h</sub>) is the proportion of variance in total scale scores that is due to a single general factor shared by all of the items. It answers a question coefficient alpha is often taken to answer: how much of the total score reflects a single source of variance common to every item. Whether that general factor is the construct the scale is meant to measure is a separate question of validity; it can also include method variance shared by all the items, such as a response style.</p>
-    <p>ω<sub>h</sub> comes from a bifactor model. In that model, every item loads on a general factor, which all items share, and on one group factor, which only a subset of items share, such as items from the same dimension or items with similar wording. The factors are uncorrelated, so each item’s variance divides cleanly into general, group and unique parts. ω<sub>h</sub> is the squared sum of the items’ general-factor loadings divided by the variance of the total score:</p>
+    <p>ω<sub>h</sub> comes from a hierarchical factor model (also known as the bifactor model). In that model, every item loads on a general factor, which all items share, and on one group factor, which only a subset of items share, such as items from the same dimension or items with similar wording. The factors are uncorrelated, so each item’s variance divides cleanly into general, group and unique parts. ω<sub>h</sub> is the squared sum of the items’ general-factor loadings divided by the variance of the total score:</p>
     <p class="formula">ω<sub>h</sub> = (Σ λ<sub>g</sub>)² / σ²<sub>total</sub></p>
     <p>Adding each group factor’s squared sum of loadings to the numerator gives ω<sub>t</sub>, the reliability of the total score as a whole. Alpha cannot separate these sources; it counts general and group variance alike. Cortina et al. (2020) recommend that ω<sub>h</sub> be used instead of alpha.</p>
     <p class="ref">Cortina, J. M., Sheng, Z., Keener, S. K., Keeler, K. R., Grubb, L. K., Schmitt, N., Tonidandel, S., Summerville, K. M., Heggestad, E. D., &amp; Banks, G. C. (2020). From alpha to omega and beyond! A look at the past, present, and (possible) future of psychometric soundness in the <i>Journal of Applied Psychology</i>. <i>Journal of Applied Psychology, 105</i>(12), 1351–1381. <a href="https://doi.org/10.1037/apl0000815">https://doi.org/10.1037/apl0000815</a></p>
@@ -130,9 +130,9 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
 
   <header>
     <h2 class="tool-title">Omega &amp; Alpha Calculator</h2>
-    <p>Enter item-level survey data, or a covariance or correlation matrix, to get coefficient alpha and omega-hierarchical from a Schmid–Leiman bifactor solution. Everything runs in your browser; your data never leave this page.</p>
+    <p>Enter item-level survey data, or a covariance or correlation matrix, to get coefficient alpha and omega-hierarchical from a Schmid–Leiman hierarchical factor solution. Everything runs in your browser; your data never leave this page.</p>
     <p style="margin-top:10px">Omega-h requires that the number of group factors be specified. You can specify a number of group factors or the tool will do it automatically using parallel analysis.</p>
-    <p style="margin-top:10px">Most scales today have six or fewer items. A usable bifactor model needs at least six items, two group factors of three items each, and even then the general factor is identified only by constraining its loadings to be equal; with nine or more items (three group factors of three), no constraint is needed. <b>For shorter scales</b>, the tool fits a single factor and checks the residual correlations. If one factor accounts for the correlations, ω is the reliability of the general factor. If it doesn't, α and ω overstate it; for four- or five-item scales, the tool then also gives a conservative estimate of ω<sub>h</sub> from a bifactor model with equal general-factor loadings, and a panel in the results explains what you need to check before using it.</p>
+    <p style="margin-top:10px">Most scales today have six or fewer items. A usable hierarchical factor model needs at least six items, two group factors of three items each, and even then the general factor is identified only by constraining its loadings to be equal; with nine or more items (three group factors of three), no constraint is needed. <b>For shorter scales</b>, the tool fits a single factor and checks the residual correlations. If one factor accounts for the correlations, ω is the reliability of the general factor. If it doesn't, α and ω overstate it; for four- or five-item scales, the tool then also gives a conservative estimate of ω<sub>h</sub> from a hierarchical factor model with equal general-factor loadings, and a panel in the results explains what you need to check before using it.</p>
     <div class="cite-box">If you publish results produced with this tool or use it in teaching, please cite it as: <span class="cite-box-ref">Cortina, J. M. (2026). <i>Omega &amp; Alpha Calculator</i> (Version 1.0) [Web application]. https://josecortina.com/omega-alpha-calculator</span></div>
   </header>
 
@@ -211,7 +211,7 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
     </div>
 
     <div class="panel">
-      <span class="eyebrow" id="pathTitle">Bifactor path diagram</span>
+      <span class="eyebrow" id="pathTitle">Path diagram of the hierarchical factor model</span>
       <p class="note" style="margin:0;color:var(--ink)">In a scale that is intended to be unidimensional, the loadings on the general factor should be large and the loadings on the group factors small. If this is the case, then omega-h (and alpha) will be large.</p>
       <p class="note" style="margin:0;color:var(--ink)">Large loadings on both the general factor and the group factors can produce large alphas but will produce smaller omega-h values. This is the primary advantage of omega-h.</p>
       <figure class="pd-fig">
@@ -249,8 +249,8 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
       <div class="body">
         <p><b>Input.</b> Raw data are reduced to a covariance matrix (listwise deletion). You can instead enter a covariance or correlation matrix directly, which gives identical results to the raw data it came from. Reverse scoring a matrix item flips the sign of its row and column, which is what reverse scoring does to the covariances. Item means are only available from raw data.</p>
         <p><b>Basis.</b> <i>Covariances</i> gives the reliability of the unit-weighted sum of raw item scores: raw alpha and omega with loadings rescaled by each item's SD. <i>Correlations</i> gives the reliability of the sum of standardized items: standardized alpha and the standardized omega reported by <code>psych::omega</code>. A correlation matrix carries no SDs, so it always uses the correlation basis. The two bases differ only when item variances differ.</p>
-        <p><b>Number of group factors.</b> The tool preselects it with parallel analysis (Horn, 1965) in its common-factor form, as in <code>psych::fa.parallel</code>. It compares the eigenvalues of the correlation matrix, with squared multiple correlations on the diagonal, against the 95th percentile of eigenvalues from 100 random normal data sets of the same size, and keeps the leading factors that beat chance. When parallel analysis finds one factor, the tool fits one factor, and ω<sub>h</sub> is the one-factor ω; the suggestion is never above one factor per three items. You can override it. Velicer's MAP test (original 1976 and revised 2000) is reported for reference but not used to preselect, because with a strong general factor it usually suggests one factor. In simulated bifactor data with 3 to 5 group factors, the common-factor parallel analysis found the right number every time, while MAP usually returned 1. Parallel analysis needs n. For a matrix without n, the tool uses psych's default of 3 group factors when there are at least nine items; with six to eight items it uses 2 if a single factor leaves a residual correlation of .10 or more, and 1 otherwise; with fewer than six items it uses 1.</p>
-        <p><b>Short-scale estimate (four or five items).</b> When one factor fails the model check on a four- or five-item scale, the tool fits a bifactor model by maximum likelihood in which every item has the same general-factor loading and the items form two group factors (two pairs for four items; three items and two items for five). A two-item group factor needs equal loadings. These constraints make the model identified (df = 3 for four items, 5 for five); without them, no bifactor model with this few items can be estimated. For four items, the tool picks the pairing that fits best; for five, it starts from the two-factor exploratory pattern, and the researcher should confirm or change the grouping. In population tests, the estimate equaled the true ω<sub>h</sub> when general loadings were equal and was usually too low otherwise: by about .005 to .03 with mild to moderate inequality, about .06 with strong inequality, and by up to .12 when the items with the strongest general loadings formed one group factor, a case the fit test cannot detect. With five items, a wrong grouping can make the estimate too high. The panel also reports the correlation between the two groups’ true scores (each group’s general plus group-factor variance), to help the researcher judge whether the groups are elements of one construct or distinct dimensions; the tool leaves that judgment to the researcher. When one factor fits, the tool reports the one-factor ω instead, because on a unidimensional scale with unequal loadings the equal-loading model would underestimate ω<sub>h</sub> by about .10 or more.</p>
+        <p><b>Number of group factors.</b> The tool preselects it with parallel analysis (Horn, 1965) in its common-factor form, as in <code>psych::fa.parallel</code>. It compares the eigenvalues of the correlation matrix, with squared multiple correlations on the diagonal, against the 95th percentile of eigenvalues from 100 random normal data sets of the same size, and keeps the leading factors that beat chance. When parallel analysis finds one factor, the tool fits one factor, and ω<sub>h</sub> is the one-factor ω; the suggestion is never above one factor per three items. You can override it. Velicer's MAP test (original 1976 and revised 2000) is reported for reference but not used to preselect, because with a strong general factor it usually suggests one factor. In simulated data with a hierarchical factor structure with 3 to 5 group factors, the common-factor parallel analysis found the right number every time, while MAP usually returned 1. Parallel analysis needs n. For a matrix without n, the tool uses psych's default of 3 group factors when there are at least nine items; with six to eight items it uses 2 if a single factor leaves a residual correlation of .10 or more, and 1 otherwise; with fewer than six items it uses 1.</p>
+        <p><b>Short-scale estimate (four or five items).</b> When one factor fails the model check on a four- or five-item scale, the tool fits a hierarchical factor model by maximum likelihood in which every item has the same general-factor loading and the items form two group factors (two pairs for four items; three items and two items for five). A two-item group factor needs equal loadings. These constraints make the model identified (df = 3 for four items, 5 for five); without them, no hierarchical factor model with this few items can be estimated. For four items, the tool picks the pairing that fits best; for five, it starts from the two-factor exploratory pattern, and the researcher should confirm or change the grouping. In population tests, the estimate equaled the true ω<sub>h</sub> when general loadings were equal and was usually too low otherwise: by about .005 to .03 with mild to moderate inequality, about .06 with strong inequality, and by up to .12 when the items with the strongest general loadings formed one group factor, a case the fit test cannot detect. With five items, a wrong grouping can make the estimate too high. The panel also reports the correlation between the two groups’ true scores (each group’s general plus group-factor variance), to help the researcher judge whether the groups are elements of one construct or distinct dimensions; the tool leaves that judgment to the researcher. When one factor fits, the tool reports the one-factor ω instead, because on a unidimensional scale with unequal loadings the equal-loading model would underestimate ω<sub>h</sub> by about .10 or more.</p>
         <p><b>Model check.</b> Residual correlations are the observed correlations minus those implied by the reported solution. When n is known and the model has positive degrees of freedom, the tool also reports the maximum-likelihood χ² test of the k-factor model with Bartlett's correction, as in <code>factanal</code> and <code>psych::fa</code>, and its RMSEA. The fit test uses maximum likelihood; the loadings and omegas still come from minimum residual. For a one-factor solution, the tool warns that α and ω overstate the general factor when the test rejects at .05 and the largest residual is at least .05, or, without n, when the largest residual is at least .10. In simulations at n = 300, unidimensional 4- to 6-item scales drew this warning in 10% of samples or fewer, and 4- and 5-item scales with two group factors drew it in every sample.</p>
         <p><b>Alpha</b> is k/(k − 1) · (1 − Σ σ²ᵢ / σ²ₓ) on the chosen matrix. The confidence interval follows Feldt (1965), using the F distribution with n − 1 and (n − 1)(k − 1) degrees of freedom; it needs n.</p>
         <p><b>Omega</b> follows the defaults of <code>psych::omega</code> in R: minimum-residual (iterated principal axis) extraction of k factors from the correlation matrix, oblimin rotation, a single higher-order factor extracted from the factor correlations, then the Schmid–Leiman transformation. With two group factors the higher-order loadings are set equal to √r₁₂, as in psych. With one factor, that factor is g, so ω<sub>h</sub> = (Σλ)² / total variance; it equals ω<sub>t</sub> when one factor accounts for the correlations.</p>
@@ -861,7 +861,7 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
       if (o.misfit) {
         const r2 = v => v.toFixed(2).replace(/^(-?)0\./, '$1.');
         o.warnings.push(`One factor does not fully account for the item correlations (${testTxt}largest residual correlation ${r2(top.resid)}, between ${top.a} and ${top.b}). Alpha and ω therefore overstate how much of the total score reflects a single general factor. ` +
-          (p === 4 || p === 5 ? 'See the short-scale estimate below for a conservative estimate of ω_h.' : p < 6 ? 'With three items, no bifactor model can estimate by how much.' : 'Try 2 or more group factors to estimate ω_h.'));
+          (p === 4 || p === 5 ? 'See the short-scale estimate below for a conservative estimate of ω_h.' : p < 6 ? 'With three items, no hierarchical factor model can estimate by how much.' : 'Try 2 or more group factors to estimate ω_h.'));
       }
     }
     // Short scales: when one factor fails, estimate omega-h from the equal-loading bifactor model.
@@ -1092,14 +1092,14 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
       t = `<b>Parallel analysis suggests ${s.raw} factor${s.raw === 1 ? '' : 's'}</b> (n = ${s.pa.n}).`;
       if (s.raw <= 1) t += ` That points to a unidimensional scale, so the tool fits one factor; the model check tests whether one factor accounts for the correlations.`;
       if (s.capped) t += s.cap === 1
-        ? ' With fewer than six items, a usable bifactor model is not possible, so the tool fits one factor; the model check tests whether one factor accounts for the correlations.'
+        ? ' With fewer than six items, a usable hierarchical factor model is not possible, so the tool fits one factor; the model check tests whether one factor accounts for the correlations.'
         : ` That is more than the ${s.cap} this many items can support (3 items per factor).`;
       t += mapPart;
     } else {
       const nItems = src ? src.names.filter(h => selected.has(h)).length : 0;
       let why;
       if (s.method === 'default') why = `Using psych's default of ${s.nf} group factors until then.`;
-      else if (nItems < 6) why = 'Using one factor, because a usable bifactor model needs at least six items.';
+      else if (nItems < 6) why = 'Using one factor, because a usable hierarchical factor model needs at least six items.';
       else if (s.nf >= 2) why = `Using 2 group factors until then, because one factor leaves a residual correlation of ${f2(s.oneFactorMaxResid)}.`;
       else why = 'Using one factor until then, because one factor leaves no residual correlation of .10 or more.';
       t = `<b>Enter the sample size</b> to get a parallel-analysis suggestion and a fit test. ${why}` + mapPart;
@@ -1149,8 +1149,8 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
     const ssBad = ss && ss.fit.test && ss.fit.p < .05;
     const stats = ss ? [
       [cov ? 'Coefficient α' : 'Coefficient α (standardized)', f2(a.alpha), (a.ci ? `${pct}% CI [${f2(a.ci[0])}, ${f2(a.ci[1])}] · ` : '') + 'overstates g (see warning)', true],
-      ['ω hierarchical', f2(ss.omegaH), ssBad ? 'equal-loading bifactor · model does not fit (see panel)' : `equal-loading bifactor · conservative · ${basisTxt}`, true],
-      ['ω total', f2(ss.omegaT), `equal-loading bifactor · ${basisTxt}`],
+      ['ω hierarchical', f2(ss.omegaH), ssBad ? 'equal-loading hierarchical model · model does not fit (see panel)' : `equal-loading hierarchical model · conservative · ${basisTxt}`, true],
+      ['ω total', f2(ss.omegaT), `equal-loading hierarchical model · ${basisTxt}`],
       ['ωh / ωt', f2(ss.omegaH / ss.omegaT), 'share of reliable variance due to g'],
       ['ECV', f2(ss.ECV), 'common variance explained by g'],
       ['ω, one factor', f2(o.omegaH), 'overstated: one factor does not fit'],
@@ -1173,7 +1173,7 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
     renderModelCheck(res);
     renderShortScale(res);
     $('groupPanel').hidden = o.nf === 1;
-    $('pathTitle').textContent = ss ? 'Bifactor path diagram (equal-loading model used for the short-scale estimate)' : o.nf === 1 ? 'Path diagram' : 'Bifactor path diagram';
+    $('pathTitle').textContent = ss ? 'Path diagram of the equal-loading hierarchical factor model (used for the short-scale estimate)' : o.nf === 1 ? 'Path diagram' : 'Path diagram of the hierarchical factor model';
     $('itemTitle').textContent = o.nf === 1 ? 'Item statistics and one-factor loadings' : 'Item statistics and Schmid–Leiman loadings';
 
     const showMean = a.items.some(it => isFinite(it.mean)), showSD = a.items.some(it => isFinite(it.sd));
@@ -1201,7 +1201,7 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
 
   // ---- bifactor path diagram (inline SVG built from the Schmid–Leiman solution) ----
   function drawPath(res) {
-    // when the short-scale estimate is reported, draw the equal-loading bifactor model it came from
+    // when the short-scale estimate is reported, draw the equal-loading hierarchical factor model it came from
     const ssm = res.omega.shortScale;
     const o = ssm ? { nf: 2, items: ssm.names.map((_, i) => ({ g: ssm.g, s: [ssm.grp[i] === 0 ? ssm.s[i] : 0, ssm.grp[i] === 1 ? ssm.s[i] : 0], h2: 1 - ssm.u2[i], u2: ssm.u2[i] })) } : res.omega;
     const nf = o.nf, items = o.items, names = res.cols, p = items.length;
@@ -1259,15 +1259,15 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
     }
     const defs = `<defs>${['g', 's', 'neg'].map(k => `<marker id="pd-${k}" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L8,4 L0,8 z" class="pd-head-${k}"/></marker>`).join('')}</defs>`;
     const claim = nf > 1
-      ? `Bifactor path diagram: every one of the ${p} items loads on the general factor g and on one of ${nf} group factors; all factors are uncorrelated.`
+      ? `Hierarchical factor model: every one of the ${p} items loads on the general factor g and on one of ${nf} group factors; all factors are uncorrelated.`
       : `Path diagram: all ${p} items load on a single factor g.`;
     $('pathWrap').innerHTML = `<svg viewBox="0 0 ${W.toFixed(0)} ${H}" role="img" aria-label="${esc(claim)}" style="min-width:${Math.min(W, Math.max(360, p * 46)).toFixed(0)}px;max-width:${W.toFixed(0)}px">${defs}${lines}${nodes}${labels}</svg>`;
     let cap = nf > 1
-      ? 'Schmid–Leiman bifactor solution. Every item loads on the general factor g (top) and on one group factor (bottom), and all factors are uncorrelated. Numbers are standardized loadings, line width shows their size, and u² is each item’s unique variance.'
+      ? 'Schmid–Leiman hierarchical factor solution. Every item loads on the general factor g (top) and on one group factor (bottom), and all factors are uncorrelated. Numbers are standardized loadings, line width shows their size, and u² is each item’s unique variance.'
       : 'With one factor, every item loads only on g, the factor all items share. Numbers are standardized loadings, line width shows their size, and u² is each item’s unique variance. The model check shows whether one factor accounts for the correlations.';
     if (crossSeen) cap += ' Dashed lines are cross-loadings of |.20| or more on a second group factor.';
     if (negSeen) cap += ' Red dashed lines are negative loadings.';
-    if (ssm) cap = `Equal-loading bifactor model used for the short-scale estimate: every item has the same loading on g, and the items form group factor F1 (Group A) and F2 (Group B). Numbers are standardized loadings, and u² is each item’s unique variance.` + (ssm.members.some(m => m.length === 2) ? ' A two-item group factor has equal loadings, which is required for the model to be estimated.' : '');
+    if (ssm) cap = `Equal-loading hierarchical factor model used for the short-scale estimate: every item has the same loading on g, and the items form group factor F1 (Group A) and F2 (Group B). Numbers are standardized loadings, and u² is each item’s unique variance.` + (ssm.members.some(m => m.length === 2) ? ' A two-item group factor has equal loadings, which is required for the model to be estimated.' : '');
     else if (nf === 2) cap += ' With two group factors the g loadings rest on psych’s equal-loading convention (see the note above).';
     $('pathCap').textContent = cap;
   }
@@ -1305,7 +1305,7 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
     const bad = ss.fit.test && ss.fit.p < .05, negS = ss.s.some(v => v < -0.05);
     $('ssSub').innerHTML = `${bad ? 'from a model that does not fit (see below)' : 'conservative estimate'} · ω<sub>t</sub> = ${f2(ss.omegaT)} · groups: A (${ss.members[0].map(i => esc(ss.names[i])).join(', ')}), B (${ss.members[1].map(i => esc(ss.names[i])).join(', ')})`;
     $('ssWhy').innerHTML = `This panel appears because one factor does not account for the correlations among these ${p} items (see the warning above), so α and ω overstate the general factor. ` +
-      `With only ${p} items, the one bifactor model that can be estimated has <b>equal loadings on the general factor</b> for every item and two group factors: ` +
+      `With only ${p} items, the one hierarchical factor model that can be estimated has <b>equal loadings on the general factor</b> for every item and two group factors: ` +
       (five ? 'three items in one group and two in the other.' : 'two pairs of items.') +
       ` The items are now grouped by <b>${ss.source === 'your grouping' ? 'your choice' : ss.source === 'best fit' ? 'best fit' : 'the factor pattern'}</b>.`;
     $('ssDim').innerHTML = `<b>One dimension or two?</b> The true scores of the two groups correlate <b>${f2(ss.groupCorr)}</b> (from the equal-loading model, assuming the grouping below is right). If you consider the groups distinct dimensions, score and report them separately rather than as one total. If you consider them closely related elements of a single construct, the total score and this ω<sub>h</sub> apply.`;
@@ -1313,11 +1313,11 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
       '<b>Check the grouping below now, before you use this estimate.</b> The starting grouping comes from the factor pattern, which picked the right grouping only about two-thirds to three-quarters of the time in simulations with five items. A wrong grouping can make the estimate too high.',
       '<b>Group the items by theory, not by the numbers.</b> Put items together if they share something beyond the construct, such as similar wording, the same reverse keying, a shared stem, or the same subtopic. One group must have three items and the other two.',
       '<b>If you change the grouping, press “Recompute with this grouping.”</b> The estimate, the diagram and the fit test below all update.',
-      '<b>Report the value as a conservative estimate</b> of ω<sub>h</sub> from a bifactor model with equal general-factor loadings, and list the grouping you used.'
+      '<b>Report the value as a conservative estimate</b> of ω<sub>h</sub> from a hierarchical factor model with equal general-factor loadings, and list the grouping you used.'
     ] : [
       '<b>Check that the pairing below makes sense.</b> The tool chose the pairing that fits best, which found the right pairs in every simulated sample. Change it only if theory says the items pair differently, such as two similarly worded or reverse-keyed items; each group needs two items.',
       '<b>If you change the pairing, press “Recompute with this grouping.”</b> The estimate, the diagram and the fit test below all update.',
-      '<b>Report the value as a conservative estimate</b> of ω<sub>h</sub> from a bifactor model with equal general-factor loadings, and list the pairing you used.'
+      '<b>Report the value as a conservative estimate</b> of ω<sub>h</sub> from a hierarchical factor model with equal general-factor loadings, and list the pairing you used.'
     ];
     $('ssSteps').innerHTML = steps.map(t => `<li>${t}</li>`).join('');
     $('ssGroups').innerHTML = ss.names.map((nm, i) => `<label class="ss-item" for="ssg${i}">${esc(nm)} <select id="ssg${i}" data-i="${i}"><option value="0"${ss.grp[i] === 0 ? ' selected' : ''}>Group A</option><option value="1"${ss.grp[i] === 1 ? ' selected' : ''}>Group B</option></select></label>`).join('');
@@ -1334,7 +1334,7 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
     ss.names.forEach((_, i) => ($('ssg' + i).onchange = check));
     $('ssRecompute').onclick = () => { ssGrouping = { cols: res.cols.slice(), grp: check() }; run(); };
     check();
-    $('ssCaveat').innerHTML = `<b>Why this estimate is conservative, and when it is most off.</b> This ω<sub>h</sub> comes from a bifactor model with equal general-factor loadings, the only bifactor model that can be estimated with this few items. It tends to be conservative (too low). The bias is largest when the items’ general-factor loadings differ a lot, and especially when the items with the strongest general loadings all belong to the same group factor; the fit test cannot detect that case.` +
+    $('ssCaveat').innerHTML = `<b>Why this estimate is conservative, and when it is most off.</b> This ω<sub>h</sub> comes from a hierarchical factor model with equal general-factor loadings, the only hierarchical factor model that can be estimated with this few items. It tends to be conservative (too low). The bias is largest when the items’ general-factor loadings differ a lot, and especially when the items with the strongest general loadings all belong to the same group factor; the fit test cannot detect that case.` +
       (five ? ' The estimate is conservative only if items are assigned to the right group factors; a wrong assignment can make it too high.' : '');
     const gl = `General-factor loading (equal for all items) = ${f2(ss.g)}.`;
     const sl = [0, 1].map(k => `Group ${lab(k)}: ` + (ss.members[k].length === 2 ? `${groupTxt(k)} (equal loadings) = ${f2(ss.s[ss.members[k][0]])}` : ss.members[k].map(i => `${esc(ss.names[i])} ${f2(ss.s[i])}`).join(', '))).join('; ');
@@ -1374,7 +1374,7 @@ code { font-family: var(--f-mono); font-size: 12.5px; }
       ['standardized alpha', x3(a.stdAlpha)], ['omega hierarchical', x3(o.omegaH)], ['omega total', x3(o.omegaT)], ['ECV', x3(o.ECV)],
       ['fit test', o.fit && o.fit.test ? `chi-square(${o.fit.df}) = ${o.fit.chisq.toFixed(2)}, p = ${o.fit.p.toFixed(4)}, RMSEA = ${o.fit.rmsea.toFixed(3)}` : 'not available'],
       ['RMSR', x3(o.rmsr)],
-      ...(o.shortScale ? [['short-scale omega hierarchical (equal-loading bifactor, conservative)', x3(o.shortScale.omegaH)], ['short-scale omega total', x3(o.shortScale.omegaT)],
+      ...(o.shortScale ? [['short-scale omega hierarchical (equal-loading hierarchical model, conservative)', x3(o.shortScale.omegaH)], ['short-scale omega total', x3(o.shortScale.omegaT)],
         ['short-scale group true-score correlation', x3(o.shortScale.groupCorr)],
         ['short-scale grouping', [0, 1].map(k => (k ? 'B: ' : 'A: ') + o.shortScale.members[k].map(i => o.shortScale.names[i]).join(' ')).join('; ')],
         ['short-scale model fit', o.shortScale.fit.test ? `chi-square(${o.shortScale.fit.df}) = ${o.shortScale.fit.chisq.toFixed(2)}, p = ${o.shortScale.fit.p.toFixed(4)}, RMSEA = ${o.shortScale.fit.rmsea.toFixed(3)}` : 'not available']] : []),
